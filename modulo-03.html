@@ -1,0 +1,2794 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGE · Rastreamento de Insumos</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+    :root {
+        --navy-900:#0E1638;
+        --navy-800:#141F4D;
+        --navy-700:#1C2A5E;
+        --indigo-600:#5B4FE8;
+        --indigo-500:#6E63EE;
+        --indigo-50:#EEECFD;
+        --bg:#EEF1F8;
+        --card:#FFFFFF;
+        --border:#E1E4F0;
+        --text:#161A3B;
+        --text-muted:#6A6F94;
+        --danger:#DC3630;
+        --danger-50:#FCEAE9;
+        --ok:#1C9A6C;
+        --ok-50:#E7F7F1;
+        --radius:14px;
+        --shadow:0 1px 2px rgba(20,25,70,.04), 0 8px 24px -12px rgba(20,25,70,.12);
+
+        /* aliases para manter compatibilidade com nomes antigos usados no app */
+        --primary: var(--indigo-600);
+        --secondary: var(--navy-900);
+        --light: var(--bg);
+        --dark: var(--text);
+        --gray: var(--text-muted);
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    body {
+        background-color: var(--bg);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, .font-display { font-family: 'Sora', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+    }
+
+    /* ===== TOPBAR (mesmo padrão do design system) ===== */
+    header {
+        background: linear-gradient(180deg, var(--navy-800), var(--navy-900));
+        background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 1.5px), linear-gradient(180deg, var(--navy-800), var(--navy-900));
+        background-size: 14px 14px, auto;
+        color: #fff;
+        padding: 22px 0;
+        border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .brand-mark{
+        width:36px;height:36px;border:1.5px solid rgba(255,255,255,.75);border-radius:9px;
+        display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+
+    .logo h1 {
+        font-size: 19px;
+        font-weight: 700;
+        letter-spacing: .01em;
+        font-family: 'Sora', sans-serif;
+    }
+
+    .topbar-sub{ color: rgba(255,255,255,.6); font-size: 12px; margin-top: 2px; }
+
+    .home-link{
+        display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);
+        text-decoration:none;font-weight:600;font-size:14px;white-space:nowrap;
+    }
+    .home-link:hover{ color:#fff; }
+    .home-link svg{ flex-shrink:0; }
+
+    nav ul {
+        display: flex;
+        list-style: none;
+        gap: 4px;
+    }
+
+    nav ul li a {
+        color: rgba(255,255,255,.75);
+        text-decoration: none;
+        padding: 9px 14px;
+        border-radius: 9px;
+        font-size: 13.5px;
+        font-weight: 600;
+        transition: background-color .2s, color .2s;
+    }
+
+    nav ul li a:hover {
+        background-color: rgba(255,255,255,.08);
+        color: #fff;
+    }
+
+    nav ul li a.active {
+        background-color: var(--indigo-600);
+        color: #fff;
+        box-shadow: 0 6px 16px -6px rgba(91,79,232,.6);
+    }
+
+    /* ===== MAIN / SECTIONS ===== */
+    main {
+        padding: 36px 0 80px;
+        min-height: calc(100vh - 200px);
+    }
+
+    .section {
+        display: none;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 28px;
+    }
+
+    .section.active { display: block; }
+
+    h2 {
+        color: var(--navy-900);
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 22px;
+        padding-bottom: 14px;
+        border-bottom: 1.5px solid var(--border);
+    }
+
+    h3 {
+        color: var(--navy-900);
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    /* ===== CAMPOS / FORMULÁRIOS ===== */
+    .form-group { margin-bottom: 16px; }
+
+    label {
+        display: block;
+        margin-bottom: 7px;
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--navy-900);
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        font-size: 13.5px;
+        color: var(--text);
+        outline: none;
+        background: #fff;
+        font-family: 'Inter', sans-serif;
+        appearance: none;
+    }
+
+    select {
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236A6F94' stroke-width='2.4'><path d='m6 9 6 6 6-6'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 16px;
+        padding-right: 34px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: var(--indigo-500);
+        box-shadow: 0 0 0 3px var(--indigo-50);
+    }
+
+    input[readonly] {
+        background: #F3F4FA;
+        color: var(--text-muted);
+    }
+
+    /* ===== BOTÕES ===== */
+    button {
+        background-color: var(--indigo-600);
+        color: white;
+        border: none;
+        padding: 11px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 13.5px;
+        font-weight: 700;
+        font-family: 'Inter', sans-serif;
+        box-shadow: 0 6px 16px -6px rgba(91,79,232,.55);
+        transition: filter .15s, background-color .15s;
+    }
+
+    button:hover { filter: brightness(1.06); }
+
+    button.secondary {
+        background-color: #fff;
+        color: var(--navy-900);
+        border: 1.5px solid var(--border);
+        box-shadow: none;
+    }
+
+    button.secondary:hover { background-color: #F8F9FD; filter: none; }
+
+    button.danger {
+        background-color: var(--danger-50);
+        color: var(--danger);
+        border: 1px solid #F6D3D1;
+        box-shadow: none;
+    }
+
+    button.danger:hover { background-color: #F8D6D4; filter: none; }
+
+    .btn-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+    }
+
+    /* ===== TABELAS ===== */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+    }
+
+    th, td {
+        padding: 11px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+    }
+
+    th {
+        background-color: #F8F9FD;
+        font-weight: 700;
+        color: var(--navy-900);
+        font-size: 11.5px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    tr:hover { background-color: #F8F9FD; }
+
+    .action-buttons {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .action-buttons button {
+        padding: 6px 10px;
+        font-size: 12px;
+        box-shadow: none;
+    }
+
+    /* ===== GRUPOS DA RECEITA (Matérias-Primas + Coloração lado a lado) ===== */
+    .groups-receita {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-top: 18px;
+    }
+
+    .group-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 24px;
+        background: #fff;
+    }
+
+    .group-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 14px;
+        border-bottom: 1.5px solid var(--border);
+        margin-bottom: 22px;
+    }
+
+    .group-head h3 { margin: 0; }
+    .group-head .sub { font-size: 11px; color: var(--text-muted); }
+
+    .add-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        border: 1.5px solid var(--border);
+        background: #fff;
+        color: var(--indigo-600);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        margin-left: auto;
+        padding: 0;
+        box-shadow: none;
+    }
+
+    .add-btn svg { width: 15px; height: 15px; }
+    .add-btn:hover { background: var(--indigo-50); border-color: var(--indigo-500); filter: none; }
+
+    .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+        margin-bottom: 4px;
+    }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+        margin-bottom: 4px;
+    }
+
+    .entry-list { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+
+    .entry-empty {
+        margin-top: 18px;
+        font-size: 12px;
+        color: var(--text-muted);
+        text-align: center;
+        padding: 14px;
+        border: 1px dashed var(--border);
+        border-radius: 9px;
+    }
+
+    .entry-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #F8F9FD;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 9px 12px;
+        font-size: 12.5px;
+    }
+
+    .entry-row .seq {
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        background: var(--navy-900);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10.5px;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .entry-row .desc { flex: 1; color: var(--text); line-height: 1.5; }
+    .entry-row .desc b { color: var(--navy-900); }
+
+    .entry-row .remove {
+        width: 24px;
+        height: 24px;
+        border-radius: 7px;
+        border: none;
+        background: transparent;
+        color: var(--danger);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        padding: 0;
+        box-shadow: none;
+        font-weight: 700;
+    }
+
+    .entry-row .remove:hover { background: var(--danger-50); filter: none; }
+
+    @media (max-width: 960px) {
+        .groups-receita { grid-template-columns: 1fr; }
+        .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    /* ===== BUSCA ===== */
+    .search-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 8px;
+        align-items: end;
+    }
+
+    /* ===== IMPORTAR / EXPORTAR ===== */
+    .import-export {
+        margin-top: 28px;
+        padding-top: 22px;
+        border-top: 1.5px solid var(--border);
+    }
+
+    /* ===== MODAL ===== */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        overflow: auto;
+        background-color: rgba(14,22,56,.55);
+    }
+
+    .modal-content {
+        background-color: #fff;
+        margin: 5% auto;
+        padding: 28px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        width: 90%;
+        max-width: 620px;
+        max-height: 80vh;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+    }
+
+    .close-modal {
+        color: var(--text-muted);
+        float: right;
+        font-size: 26px;
+        font-weight: 700;
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .close-modal:hover { color: var(--navy-900); }
+
+    /* ===== TOPO / RODAPÉ ===== */
+    footer {
+        background: linear-gradient(180deg, var(--navy-800), var(--navy-900));
+        color: rgba(255,255,255,.65);
+        text-align: center;
+        padding: 18px 0;
+        margin-top: 40px;
+        font-size: 12.5px;
+    }
+
+    @media (max-width: 768px) {
+        .header-content { flex-direction: column; text-align: center; }
+        nav ul { margin-top: 12px; justify-content: center; flex-wrap: wrap; }
+        .search-form { grid-template-columns: 1fr; }
+        .action-buttons { flex-direction: column; }
+    }
+
+    /* ===== ETIQUETA DE IMPRESSÃO ===== */
+    .etiqueta {
+        width: 9cm;
+        height: 9cm;
+        border: 1px solid #000;
+        padding: 0.5cm;
+        font-family: Arial, sans-serif;
+        page-break-inside: avoid;
+    }
+
+    .etiqueta-titulo {
+        text-align: center;
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 0.5cm;
+        color: var(--navy-900);
+    }
+
+    .etiqueta-campo { margin-bottom: 0.2cm; }
+
+    .etiqueta-label {
+        font-weight: bold;
+        display: inline-block;
+        width: 2.5cm;
+    }
+
+    /* ===== Pantones da ficha do Módulo 01 (clicáveis na Receita) ===== */
+    .pantones-ficha-box{
+        margin-top:10px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:#F8F9FD;
+    }
+    .pantones-ficha-title{
+        font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:10px;
+    }
+    .pantone-grupos-grid{
+        display:grid;grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));gap:14px;align-items:start;
+    }
+    .pantone-grupo{
+        background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;
+    }
+    .pantone-grupo-titulo{
+        font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:#fff;
+        background:var(--navy-900);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    }
+    .pantone-grupo-titulo .qtd{font-size:9.5px;font-weight:700;opacity:.7;text-transform:none;letter-spacing:0;}
+    .pantone-grupo-cabecalho{
+        display:grid;grid-template-columns:26px 1fr 44px;gap:6px;padding:5px 10px;
+        font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted);
+        background:#F1F2F8;border-bottom:1px solid var(--border);
+    }
+    .pantone-linha{
+        display:grid;grid-template-columns:26px 1fr 44px;gap:6px;align-items:center;padding:7px 10px;
+        cursor:pointer;font-size:12.5px;border-bottom:1px solid var(--border);transition:background-color .12s;
+    }
+    .pantone-linha:last-child{border-bottom:none;}
+    .pantone-linha:hover{background:var(--indigo-50);}
+    .pantone-linha .seq{
+        font-family:'JetBrains Mono',monospace;font-weight:700;font-size:10.5px;color:var(--text-muted);
+    }
+    .pantone-linha .cod{
+        display:flex;align-items:center;gap:6px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .pantone-linha .swatch{width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.15);flex-shrink:0;}
+    .pantone-linha .tipo{
+        font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;color:var(--indigo-600);text-align:right;
+    }
+    .pantone-linha.used{background:var(--ok-50);}
+    .pantone-linha.used .cod, .pantone-linha.used .tipo{color:var(--ok);}
+    .pantone-linha.used::after{content:none;}
+    .pantone-grupo-vazio{padding:12px;font-size:11.5px;color:var(--text-muted);font-style:italic;text-align:center;}
+    .pantones-ficha-empty{font-size:12px;color:var(--text-muted);font-style:italic;}
+
+    @media print {
+        body * { visibility: hidden; }
+        .etiqueta, .etiqueta * { visibility: visible; }
+        .etiqueta {
+            position: absolute;
+            left: 0; top: 0;
+            width: 9cm; height: 9cm;
+        }
+    }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <div class="brand-mark">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M13 2 3 14h7l-1 8 11-14h-7l1-6z"/></svg>
+                </div>
+                <div>
+                    <h1>SGE — Rastreamento de Insumos</h1>
+                    <div class="topbar-sub">Módulo 03 · Fornecedores, produtos, receitas e estoque</div>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#" class="nav-link" data-section="fornecedor">Fornecedor</a></li>
+                    <li><a href="#" class="nav-link" data-section="produto">Produto</a></li>
+                    <li><a href="#" class="nav-link active" data-section="receita">Receita</a></li>
+                    <li><a href="#" class="nav-link" data-section="estoque">Estoque</a></li>
+                    <li><a href="#" class="nav-link" data-section="busca">Busca</a></li>
+                </ul>
+            </nav>
+            <a class="home-link" href="modulo-00.html">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+                Início
+            </a>
+        </div>
+    </header>
+
+
+    <main class="container">
+        <!-- Seção Fornecedor -->
+        <section id="fornecedor" class="section">
+            <h2>Cadastro de Fornecedor</h2>
+            <form id="formFornecedor">
+                <input type="hidden" id="fornecedorId">
+                <div class="form-group">
+                    <label for="fornecedorNome">Nome do Fornecedor</label>
+                    <input type="text" id="fornecedorNome" required>
+                </div>
+                <div class="form-group">
+                    <label for="fornecedorCidade">Cidade</label>
+                    <input type="text" id="fornecedorCidade" required>
+                </div>
+                <div class="form-group">
+                    <label for="fornecedorEstado">Estado</label>
+                    <select id="fornecedorEstado" required>
+                        <option value="">Selecione</option>
+                        <option value="AC">Acre</option>
+                        <option value="AL">Alagoas</option>
+                        <option value="AP">Amapá</option>
+                        <option value="AM">Amazonas</option>
+                        <option value="BA">Bahia</option>
+                        <option value="CE">Ceara</option>
+                        <option value="DF">Distrito Federal</option>
+                        <option value="ES">Espírito Santo</option>
+                        <option value="GO">Goiás</option>
+                        <option value="MA">Maranhão</option>
+                        <option value="MT">Mato Grosso</option>
+                        <option value="MS">Mato Grosso do Sul</option>
+                        <option value="MG">Minas Gerais</option>
+                        <option value="PA">Pará</option>
+                        <option value="PB">Paraíba</option>
+                        <option value="PR">Paraná</option>
+                        <option value="PE">Pernambuco</option>
+                        <option value="PI">Piauí</option>
+                        <option value="RJ">Rio de Janeiro</option>
+                        <option value="RN">Rio Grande do Norte</option>
+                        <option value="RS">Rio Grande do Sul</option>
+                        <option value="RO">Rondônia</option>
+                        <option value="RR">Roraima</option>
+                        <option value="SC">Santa Catarina</option>
+                        <option value="SP">São Paulo</option>
+                        <option value="SE">Sergipe</option>
+                        <option value="TO">Tocantins</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fornecedorContato">Contato</label>
+                    <input type="text" id="fornecedorContato" required>
+                </div>
+                <div class="form-group">
+                    <label for="fornecedorEmail">E-mail</label>
+                    <input type="email" id="fornecedorEmail" required>
+                </div>
+                <div class="btn-group">
+                    <button type="submit">Salvar</button>
+                    <button type="reset" class="secondary" id="btnCancelarFornecedor">Cancelar</button>
+                </div>
+            </form>
+            
+            <h3 style="margin-top: 2rem;">Fornecedores Cadastrados</h3>
+            <table id="tabelaFornecedores">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Cidade</th>
+                        <th>Estado</th>
+                        <th>Contato</th>
+                        <th>E-mail</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Os dados serão preenchidos via JavaScript -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Seção Produto -->
+        <section id="produto" class="section">
+            <h2>Cadastro de Produto</h2>
+            <form id="formProduto">
+                <input type="hidden" id="produtoId">
+                <div class="form-group">
+                    <label for="produtoFornecedor">Fornecedor</label>
+                    <select id="produtoFornecedor" required>
+                        <option value="">Selecione um fornecedor</option>
+                        <!-- Opções preenchidas via JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="produtoNome">Produto</label>
+                    <input type="text" id="produtoNome" required>
+                </div>
+                <div class="form-group">
+                    <label for="produtoLote">Lote</label>
+                    <input type="text" id="produtoLote" required>
+                </div>
+                <div class="form-group">
+                    <label for="produtoDataFabricacao">Data de Fabricação</label>
+                    <input type="date" id="produtoDataFabricacao" required>
+                </div>
+                <div class="form-group">
+                    <label for="produtoQuantidade">Quantidade (kg)</label>
+                    <input type="number" id="produtoQuantidade" step="0.01" min="0" required>
+                </div>
+                <div class="btn-group">
+                    <button type="submit">Salvar</button>
+                    <button type="reset" class="secondary" id="btnCancelarProduto">Cancelar</button>
+                </div>
+            </form>
+            
+            <h3 style="margin-top: 2rem;">Produtos Cadastrados</h3>
+            <table id="tabelaProdutos">
+                <thead>
+                    <tr>
+                        <th>Fornecedor</th>
+                        <th>Produto</th>
+                        <th>Lote</th>
+                        <th>Data Fab.</th>
+                        <th>Quantidade (kg)</th>
+                        <th>Data Cadastro</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Os dados serão preenchidos via JavaScript -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Seção Receita — layout adaptado de receita.html, mantendo os mesmos IDs/classes do sistema -->
+        <section id="receita" class="section active">
+            <h2>Cadastro de Receita</h2>
+            <form id="formReceita">
+                <input type="hidden" id="receitaId">
+
+                <!-- Vínculo com o Módulo 02 · Estamparia -->
+                <div class="form-group" style="margin-top:6px;">
+                    <label for="receitaPedido">Pedido (Módulo 02 · Estamparia)</label>
+                    <select id="receitaPedido">
+                        <option value="">Nenhum — receita avulsa</option>
+                    </select>
+                    <div id="receitaPedidoInfo" style="font-size:11.5px;color:var(--text-muted);margin-top:6px;"></div>
+                    <div class="pantones-ficha-box" id="pantonesFichaBox" style="display:none;">
+                        <div class="pantones-ficha-title">Pantones da ficha (Módulo 01) — clique para preencher a receita</div>
+                        <div class="pantone-grupos-grid" id="pantonesFichaList"></div>
+                    </div>
+                </div>
+
+                <!-- linha superior: dados gerais da receita, no padrão do módulo de identidade visual -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px;margin-bottom:6px;">
+                    <div class="form-group">
+                        <label for="receitaPantone">Pantone</label>
+                        <input type="text" id="receitaPantone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="receitaReferencia">Referência</label>
+                        <input type="text" id="receitaReferencia" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="receitaTipo">Tipo <span style="font-weight:600;color:var(--text-muted);text-transform:none;">(sequência automática do Módulo 01)</span></label>
+                        <input type="text" id="receitaTipo" readonly placeholder="Selecione um pantone abaixo" style="background:#F1F2F8;color:var(--navy-900);font-weight:700;cursor:not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label for="receitaAmostraPedido">Amostra ou Pedido</label>
+                        <select id="receitaAmostraPedido" required>
+                            <option value="">Selecione</option>
+                            <option value="Amostra">Amostra</option>
+                            <option value="Pedido">Pedido</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="receitaOP">OP</label>
+                        <input type="text" id="receitaOP">
+                    </div>
+                </div>
+
+                <!-- grupos: Matérias-Primas + Coloração, lado a lado, no padrão group-card do módulo de identidade visual -->
+                <div class="groups-receita">
+
+                    <div class="group-card">
+                        <div class="group-head">
+                            <h3>Adicionar Matérias-Primas</h3>
+                            <span class="sub">— Fornecedor define o Produto</span>
+                            <button type="button" class="add-btn" id="adicionarMateria" title="Adicionar Matéria-Prima">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+                            </button>
+                        </div>
+                        <div class="grid-3">
+                            <div class="form-group">
+                                <label for="mpFornecedor">Fornecedor</label>
+                                <select id="mpFornecedor">
+                                    <option value="">Selecione um fornecedor</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="mpProduto">Produto</label>
+                                <select id="mpProduto" disabled>
+                                    <option value="">Selecione o fornecedor</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="mpLote">Lote</label>
+                                <input type="text" id="mpLote" placeholder="—" readonly>
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="mpData">Data Fabricação</label>
+                                <input type="text" id="mpData" placeholder="—" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="mpQtd">Quantidade (kg)</label>
+                                <input type="number" id="mpQtd" step="0.01" min="0" placeholder="0,00">
+                            </div>
+                        </div>
+                        <div id="materiasPrimas" class="entry-list"></div>
+                        <div id="materiasPrimasEmpty" class="entry-empty">Nenhuma matéria-prima adicionada ainda</div>
+                    </div>
+
+                    <div class="group-card">
+                        <div class="group-head">
+                            <h3>Adicionar Coloração</h3>
+                            <span class="sub">— Fornecedor define o Produto</span>
+                            <button type="button" class="add-btn" id="adicionarColoracao" title="Adicionar Coloração">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+                            </button>
+                        </div>
+                        <div class="grid-3">
+                            <div class="form-group">
+                                <label for="corFornecedor">Fornecedor</label>
+                                <select id="corFornecedor">
+                                    <option value="">Selecione um fornecedor</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="corProduto">Produto</label>
+                                <select id="corProduto" disabled>
+                                    <option value="">Selecione o fornecedor</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="corLote">Lote</label>
+                                <input type="text" id="corLote" placeholder="—" readonly>
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="corData">Data Fabricação</label>
+                                <input type="text" id="corData" placeholder="—" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="corQtd">Quantidade (kg)</label>
+                                <input type="number" id="corQtd" step="0.01" min="0" placeholder="0,00">
+                            </div>
+                        </div>
+                        <div id="coloracaoPrimas" class="entry-list"></div>
+                        <div id="coloracaoPrimasEmpty" class="entry-empty">Nenhuma coloração adicionada ainda</div>
+                    </div>
+
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit">Salvar Receita</button>
+                    <button type="reset" class="secondary" id="btnCancelarReceita">Cancelar</button>
+                </div>
+            </form>
+            
+            <h3 style="margin-top: 2rem;">Receitas Cadastradas</h3>
+            <table id="tabelaReceitas">
+                <thead>
+                    <tr>
+                        <th>Pantone</th>
+                        <th>Estampa</th>
+                        <th>Tipo</th>
+                        <th>Referência</th>
+                        <th>Amostra/Pedido</th>
+                        <th>OP</th>
+                        <th>Pedido (Mód. 02)</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Os dados serão preenchidos via JavaScript -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Seção Estoque -->
+        <section id="estoque" class="section">
+            <h2>Estoque</h2>
+            <table id="tabelaEstoque">
+                <thead>
+                    <tr>
+                        <th>Fornecedor</th>
+                        <th>Produto</th>
+                        <th>Lote</th>
+                        <th>Data Fab.</th>
+                        <th>Quantidade (kg)</th>
+                        <th>Data Cadastro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Os dados serão preenchidos via JavaScript -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Seção Busca -->
+        <section id="busca" class="section">
+            <h2>Busca Avançada</h2>
+            <div class="pantones-ficha-box" style="margin-top:0;margin-bottom:18px;">
+                <div class="pantones-ficha-title">Filtros</div>
+                <form id="formBusca" class="search-form">
+                    <div class="form-group">
+                        <label for="buscaPantone">Pantone</label>
+                        <input type="text" id="buscaPantone" placeholder="Ex: 186 C">
+                    </div>
+                    <div class="form-group">
+                        <label for="buscaReferencia">Referência</label>
+                        <input type="text" id="buscaReferencia">
+                    </div>
+                    <div class="form-group">
+                        <label for="buscaEstampa">Estampa</label>
+                        <input type="text" id="buscaEstampa" placeholder="Ex: Estampa Localizada, Tagless">
+                    </div>
+                    <div class="form-group">
+                        <label for="buscaPedido">Pedido (Módulo 02)</label>
+                        <input type="text" id="buscaPedido" placeholder="Ex: PD-4321">
+                    </div>
+                    <div class="form-group">
+                        <label for="buscaOp">Ordem de Produção</label>
+                        <input type="text" id="buscaOp" placeholder="Ex: OP-5561">
+                    </div>
+                    <div class="form-group">
+                        <label for="buscaStatusPedido">Status do Pedido</label>
+                        <select id="buscaStatusPedido">
+                            <option value="">Qualquer</option>
+                            <option value="pendente">Pendente</option>
+                            <option value="concluida">Concluída</option>
+                            <option value="nenhum">Nenhum vínculo (receita avulsa)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="buscaProduto">Produto</label>
+                        <input type="text" id="buscaProduto">
+                    </div>
+                    <div class="form-group">
+                        <label for="buscaLote">Lote</label>
+                        <input type="text" id="buscaLote">
+                    </div>
+                    <div class="form-group">
+                        <label for="buscaDataDe">Cadastrada de</label>
+                        <input type="date" id="buscaDataDe">
+                    </div>
+                    <div class="form-group">
+                        <label for="buscaDataAte">Cadastrada até</label>
+                        <input type="date" id="buscaDataAte">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end;gap:8px;">
+                        <button type="submit">Buscar</button>
+                        <button type="button" class="secondary" id="btnLimparBusca">Limpar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="row-toolbar" style="margin:0 0 10px;padding:0;border:none;">
+                <div>
+                    <h3 style="margin:0;">Resultados da Busca</h3>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Cada pantone é salvo como uma receita individual (matéria-prima + coloração próprias), organizados por referência e estampa. <span id="buscaContagem"></span></div>
+                </div>
+                <button type="button" id="btnImprimirResultados">Imprimir Resultados</button>
+            </div>
+            <table id="tabelaBusca">
+                <thead>
+                    <tr>
+                        <th>Referência</th>
+                        <th>Estampa</th>
+                        <th>Pantone</th>
+                        <th>Tipo</th>
+                        <th>Amostra/Pedido</th>
+                        <th>OP</th>
+                        <th>Pedido</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Os dados serão preenchidos via JavaScript -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Seção Importar/Exportar -->
+        <div class="import-export">
+            <h3>Importar/Exportar Dados</h3>
+            <div class="btn-group">
+                <button id="btnExportJSON">Exportar JSON</button>
+                <button id="btnExportCSV">Exportar CSV</button>
+                <button id="btnImport" class="secondary">Importar Dados</button>
+                <input type="file" id="importFile" accept=".json,.csv" style="display: none;">
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para Detalhes -->
+    <div id="modalDetalhes" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="modalTitulo">Detalhes</h2>
+            <div id="modalConteudo"></div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>Insumos 2025 · SGE</p>
+        </div>
+    </footer>
+
+    <script>
+/* ---------- Banco do navegador (fallback) ----------
+   Quando os módulos rodam como Artifact no Claude, window.storage já existe
+   e é fornecido pela plataforma. Quando o arquivo é aberto sozinho no navegador
+   (fora do Claude), window.storage não existe e as chamadas de salvar geravam erro.
+   Este bloco cria um substituto com a MESMA interface, usando localStorage do
+   navegador, para que os módulos funcionem nos dois cenários sem alterar o
+   restante do código. */
+(function(){
+  if (window.storage && typeof window.storage.get === 'function') return;
+
+  var NS = 'sge_db::';
+  function scopeBase(shared){ return NS + (shared ? 'shared::' : 'user::'); }
+  function fullKey(key, shared){ return scopeBase(shared) + key; }
+
+  // Alguns navegadores bloqueiam até o localStorage para arquivos abertos
+  // localmente (protocolo file://, comum ao baixar e abrir com duplo clique).
+  // Por isso testamos se o localStorage está realmente utilizável antes de
+  // depender dele; se não estiver, caímos para um banco em memória (a sessão
+  // funciona normalmente, mas os dados não sobrevivem a um recarregamento).
+  var localStorageOk = false;
+  try{
+    var testKey = '__sge_storage_test__';
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+    localStorageOk = true;
+  }catch(e){
+    localStorageOk = false;
+  }
+
+  if (localStorageOk){
+    console.warn('[SGE] window.storage não disponível — usando localStorage do navegador como banco de dados local.');
+    window.storage = {
+      get: function(key, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            var raw = localStorage.getItem(fullKey(key, shared));
+            if (raw === null){ reject(new Error('Chave não encontrada: ' + key)); return; }
+            resolve({ key: key, value: raw, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      set: function(key, value, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            localStorage.setItem(fullKey(key, shared), value);
+            resolve({ key: key, value: value, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      delete: function(key, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            var existed = localStorage.getItem(fullKey(key, shared)) !== null;
+            localStorage.removeItem(fullKey(key, shared));
+            resolve({ key: key, deleted: existed, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      list: function(prefix, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            prefix = prefix || '';
+            var base = scopeBase(shared);
+            var fullPrefix = base + prefix;
+            var keys = [];
+            for(var i=0;i<localStorage.length;i++){
+              var lk = localStorage.key(i);
+              if(lk && lk.indexOf(fullPrefix) === 0){
+                keys.push(lk.slice(base.length));
+              }
+            }
+            resolve({ keys: keys, prefix: prefix, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      }
+    };
+  } else {
+    console.warn('[SGE] window.storage e localStorage indisponíveis neste navegador (comum ao abrir o arquivo direto, via file://). Usando memória temporária: os dados NÃO serão salvos ao fechar ou recarregar a página.');
+    window.__sgeStorageIsMemoryOnly = true;
+    var memoryDb = {};
+    window.storage = {
+      get: function(key, shared){
+        return new Promise(function(resolve, reject){
+          var k = fullKey(key, shared);
+          if (!(k in memoryDb)){ reject(new Error('Chave não encontrada: ' + key)); return; }
+          resolve({ key: key, value: memoryDb[k], shared: !!shared });
+        });
+      },
+      set: function(key, value, shared){
+        return new Promise(function(resolve){
+          memoryDb[fullKey(key, shared)] = value;
+          resolve({ key: key, value: value, shared: !!shared });
+        });
+      },
+      delete: function(key, shared){
+        return new Promise(function(resolve){
+          var k = fullKey(key, shared);
+          var existed = k in memoryDb;
+          delete memoryDb[k];
+          resolve({ key: key, deleted: existed, shared: !!shared });
+        });
+      },
+      list: function(prefix, shared){
+        return new Promise(function(resolve){
+          prefix = prefix || '';
+          var base = scopeBase(shared);
+          var fullPrefix = base + prefix;
+          var keys = [];
+          Object.keys(memoryDb).forEach(function(k){
+            if (k.indexOf(fullPrefix) === 0) keys.push(k.slice(base.length));
+          });
+          resolve({ keys: keys, prefix: prefix, shared: !!shared });
+        });
+      }
+    };
+  }
+})();
+</script>
+<script>
+(function(){
+  function mostrarAvisoMemoria(){
+    if(!window.__sgeStorageIsMemoryOnly) return;
+    var bar = document.createElement('div');
+    bar.setAttribute('role','alert');
+    bar.style.cssText = 'position:sticky;top:0;z-index:9999;background:#FBF1E1;color:#8a5a06;border-bottom:1px solid #F0DDB0;padding:10px 16px;font:600 12.5px/1.4 Inter,system-ui,sans-serif;text-align:center;';
+    bar.innerHTML = '\u26A0\uFE0F Este navegador n\u00e3o permite salvar permanentemente para um arquivo aberto localmente (file://). Os dados desta sess\u00e3o ser\u00e3o perdidos ao fechar ou recarregar a p\u00e1gina. Para salvar de verdade, use aqui no Claude ou hospede os arquivos em um servidor local. <button type="button" id="sgeBannerFechar" style="margin-left:10px;background:none;border:1px solid #8a5a06;border-radius:6px;padding:2px 8px;cursor:pointer;color:#8a5a06;font-weight:700;">Entendi</button>';
+    document.body.prepend(bar);
+    document.getElementById('sgeBannerFechar').addEventListener('click', function(){ bar.remove(); });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', mostrarAvisoMemoria);
+  } else {
+    mostrarAvisoMemoria();
+  }
+})();
+</script>
+<script>
+        // ---------- Banco de dados (fase de teste): window.storage (banco do navegador) ----------
+        // Mantém as mesmas assinaturas de função que o app usa (addData, getAllData, getDataByIndex,
+        // getDataById, updateData, deleteData) para que o restante da aplicação não precise mudar.
+        const DB_PREFIX = 'm03:';
+        const STORES = ['fornecedores', 'produtos', 'receitas', 'materiasPrimas'];
+        const idCounters = {};
+
+        const storeKey = (storeName, id) => `${DB_PREFIX}${storeName}:${id}`;
+        const storePrefix = (storeName) => `${DB_PREFIX}${storeName}:`;
+
+        const initDB = async () => {
+            for (const storeName of STORES) {
+                const all = await getAllData(storeName);
+                idCounters[storeName] = all.reduce((max, item) => Math.max(max, item.id || 0), 0) + 1;
+            }
+        };
+
+        // Funções genéricas para operações no banco do navegador
+        const addData = async (storeName, data) => {
+            if (idCounters[storeName] === undefined) {
+                const all = await getAllData(storeName);
+                idCounters[storeName] = all.reduce((max, item) => Math.max(max, item.id || 0), 0) + 1;
+            }
+            const id = idCounters[storeName];
+            const record = { ...data, id };
+            await window.storage.set(storeKey(storeName, id), JSON.stringify(record), false);
+            idCounters[storeName] = id + 1;
+            return id;
+        };
+
+        const getAllData = async (storeName) => {
+            try {
+                const listing = await window.storage.list(storePrefix(storeName), false);
+                const keys = (listing && listing.keys) ? listing.keys : [];
+                const items = [];
+                for (const key of keys) {
+                    try {
+                        const r = await window.storage.get(key, false);
+                        if (r) items.push(JSON.parse(r.value));
+                    } catch (e) { /* ignora item corrompido */ }
+                }
+                items.sort((a, b) => (a.id || 0) - (b.id || 0));
+                return items;
+            } catch (e) {
+                return [];
+            }
+        };
+
+        const getDataByIndex = async (storeName, indexName, value) => {
+            const all = await getAllData(storeName);
+            return all.filter(item => item[indexName] === value);
+        };
+
+        const getDataById = async (storeName, id) => {
+            try {
+                const r = await window.storage.get(storeKey(storeName, id), false);
+                return r ? JSON.parse(r.value) : undefined;
+            } catch (e) {
+                return undefined;
+            }
+        };
+
+        const updateData = async (storeName, id, data) => {
+            const record = { ...data, id };
+            await window.storage.set(storeKey(storeName, id), JSON.stringify(record), false);
+            return id;
+        };
+
+        const deleteData = async (storeName, id) => {
+            try {
+                await window.storage.delete(storeKey(storeName, id), false);
+            } catch (e) { /* já não existia */ }
+            return id;
+        };
+
+        const clearStore = async (storeName) => {
+            const listing = await window.storage.list(storePrefix(storeName), false);
+            const keys = (listing && listing.keys) ? listing.keys : [];
+            for (const key of keys) {
+                try { await window.storage.delete(key, false); } catch (e) { /* ignora */ }
+            }
+            idCounters[storeName] = 1;
+        };
+        
+        // Funções específicas da aplicação
+        const carregarFornecedores = async () => {
+            try {
+                const fornecedores = await getAllData('fornecedores');
+                const selectFornecedor = document.getElementById('produtoFornecedor');
+                const selectMpFornecedor = document.getElementById('mpFornecedor');
+                const selectCorFornecedor = document.getElementById('corFornecedor');
+                
+                // Limpar options existentes (mantendo a primeira)
+                [selectFornecedor, selectMpFornecedor, selectCorFornecedor].forEach(sel => {
+                    while (sel.options.length > 1) {
+                        sel.remove(1);
+                    }
+                });
+                
+                // Adicionar fornecedores aos selects
+                fornecedores.forEach(fornecedor => {
+                    [selectFornecedor, selectMpFornecedor, selectCorFornecedor].forEach(sel => {
+                        const option = document.createElement('option');
+                        option.value = fornecedor.id;
+                        option.textContent = fornecedor.nome;
+                        sel.appendChild(option);
+                    });
+                });
+                
+                // Atualizar tabela de fornecedores
+                const tbody = document.querySelector('#tabelaFornecedores tbody');
+                tbody.innerHTML = '';
+                
+                fornecedores.forEach(fornecedor => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${fornecedor.nome}</td>
+                        <td>${fornecedor.cidade}</td>
+                        <td>${fornecedor.estado}</td>
+                        <td>${fornecedor.contato}</td>
+                        <td>${fornecedor.email}</td>
+                        <td class="action-buttons">
+                            <button class="editar-fornecedor" data-id="${fornecedor.id}">Editar</button>
+                            <button class="excluir-fornecedor danger" data-id="${fornecedor.id}">Excluir</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                // Adicionar event listeners para os botões de ação
+                document.querySelectorAll('.editar-fornecedor').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        editarFornecedor(id);
+                    });
+                });
+                
+                document.querySelectorAll('.excluir-fornecedor').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        excluirFornecedor(id);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Erro ao carregar fornecedores:', error);
+            }
+        };
+        
+        const carregarProdutos = async () => {
+            try {
+                const produtos = await getAllData('produtos');
+                const fornecedores = await getAllData('fornecedores');
+                
+                // Criar mapa de fornecedores para fácil acesso
+                const fornecedoresMap = {};
+                fornecedores.forEach(f => {
+                    fornecedoresMap[f.id] = f.nome;
+                });
+                
+                // Atualizar tabela de produtos
+                const tbody = document.querySelector('#tabelaProdutos tbody');
+                tbody.innerHTML = '';
+                
+                produtos.forEach(produto => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${fornecedoresMap[produto.fornecedorId] || 'N/A'}</td>
+                        <td>${produto.nome}</td>
+                        <td>${produto.lote}</td>
+                        <td>${formatarData(produto.dataFabricacao)}</td>
+                        <td>${produto.quantidade}</td>
+                        <td>${formatarData(produto.dataCadastro)}</td>
+                        <td class="action-buttons">
+                            <button class="editar-produto" data-id="${produto.id}">Editar</button>
+                            <button class="excluir-produto danger" data-id="${produto.id}">Excluir</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                // Atualizar tabela de estoque
+                const estoqueTbody = document.querySelector('#tabelaEstoque tbody');
+                estoqueTbody.innerHTML = '';
+                
+                produtos.forEach(produto => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${fornecedoresMap[produto.fornecedorId] || 'N/A'}</td>
+                        <td>${produto.nome}</td>
+                        <td>${produto.lote}</td>
+                        <td>${formatarData(produto.dataFabricacao)}</td>
+                        <td>${produto.quantidade}</td>
+                        <td>${formatarData(produto.dataCadastro)}</td>
+                    `;
+                    estoqueTbody.appendChild(tr);
+                });
+                
+                // Adicionar event listeners para os botões de ação
+                document.querySelectorAll('.editar-produto').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        editarProduto(id);
+                    });
+                });
+                
+                document.querySelectorAll('.excluir-produto').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        excluirProduto(id);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Erro ao carregar produtos:', error);
+            }
+        };
+        
+        const carregarReceitas = async () => {
+            try {
+                const receitas = await getAllData('receitas');
+                const materiasPrimas = await getAllData('materiasPrimas');
+                const produtos = await getAllData('produtos');
+                const fornecedores = await getAllData('fornecedores');
+                
+                // Criar mapas para fácil acesso
+                const produtosMap = {};
+                produtos.forEach(p => {
+                    produtosMap[p.id] = p;
+                });
+                
+                const fornecedoresMap = {};
+                fornecedores.forEach(f => {
+                    fornecedoresMap[f.id] = f.nome;
+                });
+                
+                // Atualizar tabela de receitas — organizadas por referência, depois por
+                // estampa de origem e depois por pantone, para que cada pantone salvo
+                // individualmente apareça agrupado sob sua estampa.
+                const receitasOrdenadas = [...receitas].sort((a, b) => {
+                    return (a.referencia||'').localeCompare(b.referencia||'')
+                        || (a.estampaOrigem||'').localeCompare(b.estampaOrigem||'')
+                        || (a.pantone||'').localeCompare(b.pantone||'');
+                });
+
+                const tbody = document.querySelector('#tabelaReceitas tbody');
+                tbody.innerHTML = '';
+                
+                for (const receita of receitasOrdenadas) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${receita.pantone}</td>
+                        <td>${receita.estampaOrigem || '—'}</td>
+                        <td>${receita.tipo}</td>
+                        <td>${receita.referencia}</td>
+                        <td>${receita.amostraPedido}</td>
+                        <td>${receita.op || 'N/A'}</td>
+                        <td>${receita.pedido ? receita.pedido : '—'}</td>
+                        <td>${formatarData(receita.dataCadastro)}</td>
+                        <td class="action-buttons">
+                            <button class="detalhes-receita" data-id="${receita.id}">Detalhes</button>
+                            <button class="editar-receita" data-id="${receita.id}">Editar</button>
+                            <button class="excluir-receita danger" data-id="${receita.id}">Excluir</button>
+                            <button class="imprimir-receita" data-id="${receita.id}">Imprimir</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+                
+                // Adicionar event listeners para os botões de ação
+                document.querySelectorAll('.detalhes-receita').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        mostrarDetalhesReceita(id);
+                    });
+                });
+                
+                document.querySelectorAll('.editar-receita').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        editarReceita(id);
+                    });
+                });
+                
+                document.querySelectorAll('.excluir-receita').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        excluirReceita(id);
+                    });
+                });
+                
+                document.querySelectorAll('.imprimir-receita').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        imprimirEtiqueta(id);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Erro ao carregar receitas:', error);
+            }
+        };
+        
+        // Funções auxiliares
+        const formatarData = (dataString) => {
+            if (!dataString) return 'N/A';
+            const data = new Date(dataString);
+            return data.toLocaleDateString('pt-BR');
+        };
+        
+        // ===== Integração com o Módulo 02 · Estamparia (campo Pedido da Receita) =====
+        // Os pedidos são salvos pelo Módulo 02 sob as chaves 'pedido:<numero>' no mesmo
+        // banco do navegador — aqui apenas lemos essas chaves para popular o seletor.
+        let pedidosDisponiveis = []; // cache dos pedidos do Módulo 02
+
+        const carregarPedidosDoModulo02 = async () => {
+            try {
+                const listing = await window.storage.list('pedido:', false);
+                const keys = (listing && listing.keys) ? listing.keys.filter(k => !k.startsWith('pedido_meta:')) : [];
+                const items = [];
+                for (const key of keys) {
+                    try {
+                        const r = await window.storage.get(key, false);
+                        if (r) items.push(JSON.parse(r.value));
+                    } catch (e) { /* ignora item corrompido */ }
+                }
+                items.sort((a, b) => (a.status === 'concluida') - (b.status === 'concluida') || (b.pedido||'').localeCompare(a.pedido||''));
+                pedidosDisponiveis = items;
+            } catch (e) {
+                pedidosDisponiveis = [];
+            }
+            preencherSelectPedido();
+        };
+
+        const preencherSelectPedido = () => {
+            const select = document.getElementById('receitaPedido');
+            const valorAtual = select.value;
+            select.innerHTML = '<option value="">Nenhum — receita avulsa</option>';
+            pedidosDisponiveis.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.pedido;
+                const statusTxt = p.status === 'concluida' ? 'Concluída' : 'Pendente';
+                opt.textContent = `${p.pedido} — Ref. ${p.referencia} (${statusTxt})`;
+                select.appendChild(opt);
+            });
+            if (valorAtual && [...select.options].some(o => o.value === valorAtual)) {
+                select.value = valorAtual;
+            }
+        };
+
+        const mostrarInfoPedidoSelecionado = (numeroPedido) => {
+            const info = document.getElementById('receitaPedidoInfo');
+            const pedido = pedidosDisponiveis.find(p => p.pedido === numeroPedido);
+            if (!pedido) { info.textContent = ''; return; }
+            const ops = (pedido.ordens || []).map(o => `${o.numero}${o.quantidade ? ' (' + o.quantidade + ')' : ''}`).join(', ') || 'nenhuma OP cadastrada';
+            info.textContent = `Ordens de produção deste pedido: ${ops}`;
+        };
+
+        document.getElementById('receitaPedido').addEventListener('change', (e) => {
+            const numeroPedido = e.target.value;
+            mostrarInfoPedidoSelecionado(numeroPedido);
+            const pedido = pedidosDisponiveis.find(p => p.pedido === numeroPedido);
+            if (pedido) {
+                document.getElementById('receitaReferencia').value = pedido.referencia || '';
+                const opsTxt = (pedido.ordens || []).map(o => o.numero).filter(Boolean).join(', ');
+                if (opsTxt) document.getElementById('receitaOP').value = opsTxt;
+                carregarFichaModulo01ParaReceita(pedido.referencia);
+            } else {
+                carregarFichaModulo01ParaReceita('');
+            }
+        });
+
+        // ===== Pantones da ficha do Módulo 01 — clicáveis para preencher a Receita =====
+        // A ficha é salva pelo Módulo 01 sob a chave 'ficha:<referencia>' no mesmo banco do navegador.
+        let fichaVinculadaReceita = null;
+        let pantoneOrigemAtual = '';
+
+        const carregarFichaModulo01ParaReceita = async (referencia) => {
+            const box = document.getElementById('pantonesFichaBox');
+            if (!referencia) {
+                fichaVinculadaReceita = null;
+                box.style.display = 'none';
+                return;
+            }
+            try {
+                const r = await window.storage.get('ficha:' + referencia, false);
+                fichaVinculadaReceita = r ? JSON.parse(r.value) : null;
+            } catch (e) {
+                fichaVinculadaReceita = null;
+            }
+            renderPantonesFicha();
+        };
+
+        const renderPantonesFicha = () => {
+            const box = document.getElementById('pantonesFichaBox');
+            const list = document.getElementById('pantonesFichaList');
+
+            if (!fichaVinculadaReceita) { box.style.display = 'none'; return; }
+
+            // Agrupa os pantones por origem (cada estampa da ficha, na ordem cadastrada, e o Tagless por
+            // último), numerando cada pantone sequencialmente dentro do seu grupo — essa sequência
+            // (01, 02, 03...) é o que vira automaticamente o campo "Tipo" da receita.
+            const grupos = [];
+            (fichaVinculadaReceita.estampas || []).forEach((estampa, idx) => {
+                const nomeGrupo = estampa.name || `Estampa ${idx + 1}`;
+                const pantonesDoGrupo = (estampa.pantones || []).filter(p => p.code);
+                if (pantonesDoGrupo.length) grupos.push({ nome: nomeGrupo, pantones: pantonesDoGrupo });
+            });
+            if (fichaVinculadaReceita.tagless) {
+                const pantonesTagless = (fichaVinculadaReceita.tagless.pantones || []).filter(p => p.code);
+                if (pantonesTagless.length) grupos.push({ nome: 'Tagless', pantones: pantonesTagless });
+            }
+
+            if (grupos.length === 0) {
+                box.style.display = 'block';
+                list.innerHTML = '<span class="pantones-ficha-empty">Esta ficha do Módulo 01 não tem pantones cadastrados.</span>';
+                return;
+            }
+
+            box.style.display = 'block';
+            list.innerHTML = grupos.map(grupo => `
+                <div class="pantone-grupo">
+                    <div class="pantone-grupo-titulo">${grupo.nome} <span class="qtd">${grupo.pantones.length} cor(es)</span></div>
+                    <div class="pantone-grupo-cabecalho"><span>Seq</span><span>Pantone</span><span style="text-align:right;">Tipo</span></div>
+                    ${grupo.pantones.map((p, i) => {
+                        const seq = String(i + 1).padStart(2, '0');
+                        const tipo = (p.ink || '').trim();
+                        return `
+                            <div class="pantone-linha" data-code="${p.code.replace(/"/g,'&quot;')}" data-origem="${grupo.nome.replace(/"/g,'&quot;')}" data-tipo="${tipo.replace(/"/g,'&quot;')}" title="Clique para preencher a receita com este pantone">
+                                <span class="seq">${seq}</span>
+                                <span class="cod"><span class="swatch" style="background:${p.color || '#ccc'}"></span>${p.code}</span>
+                                <span class="tipo">${tipo || '—'}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `).join('');
+
+            list.querySelectorAll('.pantone-linha').forEach(linha => {
+                linha.addEventListener('click', () => {
+                    document.getElementById('receitaPantone').value = linha.getAttribute('data-code');
+                    document.getElementById('receitaTipo').value = linha.getAttribute('data-tipo');
+                    pantoneOrigemAtual = linha.getAttribute('data-origem') || '';
+                    atualizarPantoneChipsUsados();
+                });
+            });
+
+            atualizarPantoneChipsUsados();
+        };
+
+        const atualizarPantoneChipsUsados = () => {
+            const valorAtual = (document.getElementById('receitaPantone').value || '').trim().toLowerCase();
+            document.querySelectorAll('#pantonesFichaList .pantone-linha').forEach(linha => {
+                const code = (linha.getAttribute('data-code') || '').trim().toLowerCase();
+                linha.classList.toggle('used', !!valorAtual && code === valorAtual);
+            });
+        };
+
+        document.getElementById('receitaPantone').addEventListener('input', atualizarPantoneChipsUsados);
+
+        // Marca o pedido do Módulo 02 como concluído quando uma receita é salva vinculada a ele
+        const marcarPedidoConcluido = async (numeroPedido) => {
+            if (!numeroPedido) return;
+            try {
+                const r = await window.storage.get('pedido:' + numeroPedido, false);
+                if (!r) return;
+                const pedido = JSON.parse(r.value);
+                if (pedido.status === 'concluida') return;
+                pedido.status = 'concluida';
+                await window.storage.set('pedido:' + numeroPedido, JSON.stringify(pedido), false);
+                let meta = {};
+                try {
+                    const metaR = await window.storage.get('pedido_meta:' + numeroPedido, false);
+                    if (metaR) meta = JSON.parse(metaR.value);
+                } catch (e) { /* meta pode não existir */ }
+                meta.status = 'concluida';
+                meta.referencia = pedido.referencia;
+                await window.storage.set('pedido_meta:' + numeroPedido, JSON.stringify(meta), false);
+                await carregarPedidosDoModulo02();
+            } catch (e) {
+                console.error('Erro ao marcar pedido como concluído:', e);
+            }
+        };
+
+        // ===== Grupos da Receita: Matérias-Primas e Coloração (Fornecedor → Produto → Lote/Data vinculados) =====
+        // Arrays em memória com as entradas adicionadas na receita atual (usados no cadastro e na edição)
+        let mpEntries = [];
+        let corEntries = [];
+
+        const configurarLigacaoFornecedorProduto = (prefixo) => {
+            const elFornecedor = document.getElementById(prefixo + 'Fornecedor');
+            const elProduto = document.getElementById(prefixo + 'Produto');
+            const elLote = document.getElementById(prefixo + 'Lote');
+            const elData = document.getElementById(prefixo + 'Data');
+
+            elFornecedor.addEventListener('change', async () => {
+                elProduto.innerHTML = '';
+                elLote.value = '';
+                elData.value = '';
+
+                if (!elFornecedor.value) {
+                    const opt = document.createElement('option');
+                    opt.value = ''; opt.textContent = 'Selecione o fornecedor';
+                    elProduto.appendChild(opt);
+                    elProduto.disabled = true;
+                    return;
+                }
+
+                elProduto.disabled = false;
+                const opt0 = document.createElement('option');
+                opt0.value = ''; opt0.textContent = 'Selecione o produto';
+                elProduto.appendChild(opt0);
+
+                const produtos = await getDataByIndex('produtos', 'fornecedorId', parseInt(elFornecedor.value));
+                produtos.forEach(produto => {
+                    const opt = document.createElement('option');
+                    opt.value = produto.id;
+                    opt.textContent = `${produto.nome} (Lote ${produto.lote})`;
+                    elProduto.appendChild(opt);
+                });
+            });
+
+            elProduto.addEventListener('change', async () => {
+                if (!elProduto.value) {
+                    elLote.value = ''; elData.value = '';
+                    return;
+                }
+                const produto = await getDataById('produtos', parseInt(elProduto.value));
+                if (produto) {
+                    elLote.value = produto.lote;
+                    elData.value = formatarData(produto.dataFabricacao);
+                }
+            });
+        };
+
+        const renderizarEntradas = (listId, emptyId, entries) => {
+            const list = document.getElementById(listId);
+            const empty = document.getElementById(emptyId);
+            list.innerHTML = '';
+            empty.style.display = entries.length ? 'none' : 'block';
+
+            entries.forEach((entrada, i) => {
+                const row = document.createElement('div');
+                row.className = 'entry-row';
+                row.innerHTML = `
+                    <span class="seq">${i + 1}</span>
+                    <span class="desc">
+                        <b>${entrada.produtoNome}</b> · ${entrada.fornecedorNome}${entrada.quantidade ? ' · ' + entrada.quantidade + ' kg' : ''}
+                        <span class="mono" style="display:block;font-size:11px;color:var(--text-muted);margin-top:2px;">Lote ${entrada.lote} · Fabricação ${entrada.data}${entrada.tipo ? ' · ' + entrada.tipo : ''}</span>
+                    </span>
+                    <button type="button" class="remove" data-idx="${i}">✕</button>
+                `;
+                list.appendChild(row);
+            });
+
+            list.querySelectorAll('.remove').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    entries.splice(Number(btn.getAttribute('data-idx')), 1);
+                    renderizarEntradas(listId, emptyId, entries);
+                });
+            });
+        };
+
+        const resetarCamposGrupo = (prefixo) => {
+            document.getElementById(prefixo + 'Produto').value = '';
+            document.getElementById(prefixo + 'Lote').value = '';
+            document.getElementById(prefixo + 'Data').value = '';
+            document.getElementById(prefixo + 'Qtd').value = '';
+        };
+        
+        // Inicialização da aplicação
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Inicializar o banco de dados
+                await initDB();
+                
+                // Carregar dados iniciais
+                await carregarFornecedores();
+                await carregarProdutos();
+                await carregarReceitas();
+                await carregarPedidosDoModulo02();
+                
+                // Configurar navegação
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        
+                        // Remover classe active de todos os links
+                        document.querySelectorAll('.nav-link').forEach(l => {
+                            l.classList.remove('active');
+                        });
+                        
+                        // Adicionar classe active ao link clicado
+                        e.target.classList.add('active');
+                        
+                        // Esconder todas as seções
+                        document.querySelectorAll('.section').forEach(section => {
+                            section.classList.remove('active');
+                        });
+                        
+                        // Mostrar a seção correspondente
+                        const sectionId = e.target.getAttribute('data-section');
+                        document.getElementById(sectionId).classList.add('active');
+
+                        // Ao abrir a Receita, atualizar a lista de pedidos vindos do Módulo 02
+                        if (sectionId === 'receita') {
+                            carregarPedidosDoModulo02();
+                        }
+                    });
+                });
+                
+                // Configurar formulário de fornecedor
+                document.getElementById('formFornecedor').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const id = document.getElementById('fornecedorId').value;
+                    const fornecedor = {
+                        nome: document.getElementById('fornecedorNome').value,
+                        cidade: document.getElementById('fornecedorCidade').value,
+                        estado: document.getElementById('fornecedorEstado').value,
+                        contato: document.getElementById('fornecedorContato').value,
+                        email: document.getElementById('fornecedorEmail').value
+                    };
+                    
+                    try {
+                        if (id) {
+                            // Edição
+                            await updateData('fornecedores', parseInt(id), fornecedor);
+                            alert('Fornecedor atualizado com sucesso!');
+                        } else {
+                            // Novo cadastro
+                            await addData('fornecedores', fornecedor);
+                            alert('Fornecedor cadastrado com sucesso!');
+                        }
+                        
+                        e.target.reset();
+                        document.getElementById('fornecedorId').value = '';
+                        await carregarFornecedores();
+                    } catch (error) {
+                        console.error('Erro ao salvar fornecedor:', error);
+                        alert('Erro ao salvar fornecedor.');
+                    }
+                });
+                
+                // Botão cancelar edição de fornecedor
+                document.getElementById('btnCancelarFornecedor').addEventListener('click', () => {
+                    document.getElementById('formFornecedor').reset();
+                    document.getElementById('fornecedorId').value = '';
+                });
+                
+                // Configurar formulário de produto
+                document.getElementById('formProduto').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const id = document.getElementById('produtoId').value;
+                    const produto = {
+                        fornecedorId: parseInt(document.getElementById('produtoFornecedor').value),
+                        nome: document.getElementById('produtoNome').value,
+                        lote: document.getElementById('produtoLote').value,
+                        dataFabricacao: document.getElementById('produtoDataFabricacao').value,
+                        quantidade: parseFloat(document.getElementById('produtoQuantidade').value),
+                        dataCadastro: id ? (await getDataById('produtos', parseInt(id))).dataCadastro : new Date().toISOString()
+                    };
+                    
+                    try {
+                        if (id) {
+                            // Edição
+                            await updateData('produtos', parseInt(id), produto);
+                            alert('Produto atualizado com sucesso!');
+                        } else {
+                            // Novo cadastro
+                            produto.dataCadastro = new Date().toISOString();
+                            await addData('produtos', produto);
+                            alert('Produto cadastrado com sucesso!');
+                        }
+                        
+                        e.target.reset();
+                        document.getElementById('produtoId').value = '';
+                        await carregarProdutos();
+                    } catch (error) {
+                        console.error('Erro ao salvar produto:', error);
+                        alert('Erro ao salvar produto.');
+                    }
+                });
+                
+                // Botão cancelar edição de produto
+                document.getElementById('btnCancelarProduto').addEventListener('click', () => {
+                    document.getElementById('formProduto').reset();
+                    document.getElementById('produtoId').value = '';
+                });
+                
+                // Ligações Fornecedor → Produto → Lote/Data e listas de entradas (funções globais definidas abaixo)
+                configurarLigacaoFornecedorProduto('mp');
+                configurarLigacaoFornecedorProduto('cor');
+
+                // Configurar adição de matéria-prima
+                document.getElementById('adicionarMateria').addEventListener('click', async () => {
+                    const produtoId = parseInt(document.getElementById('mpProduto').value);
+                    if (!produtoId) {
+                        alert('Selecione o fornecedor e o produto para adicionar.');
+                        return;
+                    }
+                    const quantidade = parseFloat(document.getElementById('mpQtd').value);
+                    const produto = await getDataById('produtos', produtoId);
+                    const fornecedor = await getDataById('fornecedores', produto.fornecedorId);
+
+                    mpEntries.push({
+                        produtoId,
+                        produtoNome: produto.nome,
+                        fornecedorNome: fornecedor ? fornecedor.nome : 'N/A',
+                        lote: produto.lote,
+                        data: formatarData(produto.dataFabricacao),
+                        tipo: '',
+                        quantidade: quantidade ? quantidade.toFixed(2) : ''
+                    });
+
+                    resetarCamposGrupo('mp');
+                    renderizarEntradas('materiasPrimas', 'materiasPrimasEmpty', mpEntries);
+                });
+
+                // Configurar adição de coloração
+                document.getElementById('adicionarColoracao').addEventListener('click', async () => {
+                    const produtoId = parseInt(document.getElementById('corProduto').value);
+                    if (!produtoId) {
+                        alert('Selecione o fornecedor e o produto para adicionar.');
+                        return;
+                    }
+                    const quantidade = parseFloat(document.getElementById('corQtd').value);
+                    const produto = await getDataById('produtos', produtoId);
+                    const fornecedor = await getDataById('fornecedores', produto.fornecedorId);
+
+                    corEntries.push({
+                        produtoId,
+                        produtoNome: produto.nome,
+                        fornecedorNome: fornecedor ? fornecedor.nome : 'N/A',
+                        lote: produto.lote,
+                        data: formatarData(produto.dataFabricacao),
+                        tipo: '',
+                        quantidade: quantidade ? quantidade.toFixed(2) : ''
+                    });
+
+                    resetarCamposGrupo('cor');
+                    renderizarEntradas('coloracaoPrimas', 'coloracaoPrimasEmpty', corEntries);
+                });
+
+                // Configurar formulário de receita
+                document.getElementById('formReceita').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const id = document.getElementById('receitaId').value;
+                    const pedidoVinculado = document.getElementById('receitaPedido').value || null;
+                    const receita = {
+                        pantone: document.getElementById('receitaPantone').value,
+                        estampaOrigem: pantoneOrigemAtual || null,
+                        referencia: document.getElementById('receitaReferencia').value,
+                        tipo: document.getElementById('receitaTipo').value,
+                        amostraPedido: document.getElementById('receitaAmostraPedido').value,
+                        op: document.getElementById('receitaOP').value,
+                        pedido: pedidoVinculado,
+                        dataCadastro: id ? (await getDataById('receitas', parseInt(id))).dataCadastro : new Date().toISOString()
+                    };
+                    
+                    try {
+                        let receitaId;
+                        
+                        if (id) {
+                            // Edição
+                            receitaId = parseInt(id);
+                            await updateData('receitas', receitaId, receita);
+                            
+                            // Remover matérias-primas antigas
+                            const materiasAntigas = await getDataByIndex('materiasPrimas', 'receitaId', receitaId);
+                            for (const materia of materiasAntigas) {
+                                await deleteData('materiasPrimas', materia.id);
+                            }
+                            
+                            alert('Receita atualizada com sucesso!');
+                        } else {
+                            // Nova receita
+                            receita.dataCadastro = new Date().toISOString();
+                            receitaId = await addData('receitas', receita);
+                            alert('Receita cadastrada com sucesso!');
+                        }
+                        
+                        // Salvar as matérias-primas e as colorações
+                        const todasEntradas = [
+                            ...mpEntries.map(entrada => ({ ...entrada, grupo: 'materiaPrima' })),
+                            ...corEntries.map(entrada => ({ ...entrada, grupo: 'coloracao' }))
+                        ];
+
+                        for (const entrada of todasEntradas) {
+                            const quantidade = parseFloat(entrada.quantidade) || 0;
+
+                            await addData('materiasPrimas', {
+                                receitaId,
+                                produtoId: entrada.produtoId,
+                                quantidade,
+                                tipo: entrada.tipo || '',
+                                grupo: entrada.grupo,
+                                dataCadastro: new Date().toISOString()
+                            });
+
+                            // Atualizar estoque (subtrair a quantidade utilizada)
+                            const produtos = await getAllData('produtos');
+                            const produto = produtos.find(p => p.id === entrada.produtoId);
+
+                            if (produto && quantidade) {
+                                produto.quantidade -= quantidade;
+                                if (produto.quantidade < 0) produto.quantidade = 0;
+                                await updateData('produtos', produto.id, produto);
+                            }
+                        }
+                        
+                        // Limpa apenas os campos específicos desta receita/cor — mantém o
+                        // Pedido, a Referência, a OP e os chips de pantone visíveis, para que
+                        // o usuário possa clicar no próximo pantone e salvar a receita da
+                        // cor seguinte sem perder o vínculo com o pedido.
+                        document.getElementById('receitaId').value = '';
+                        document.getElementById('receitaPantone').value = '';
+                        document.getElementById('receitaTipo').value = '';
+                        document.getElementById('receitaAmostraPedido').value = '';
+                        pantoneOrigemAtual = '';
+                        mpEntries = [];
+                        corEntries = [];
+                        renderizarEntradas('materiasPrimas', 'materiasPrimasEmpty', mpEntries);
+                        renderizarEntradas('coloracaoPrimas', 'coloracaoPrimasEmpty', corEntries);
+                        atualizarPantoneChipsUsados();
+                        await carregarProdutos();
+                        await carregarReceitas();
+
+                        // Regra: ao salvar uma receita vinculada a um pedido do Módulo 02,
+                        // esse pedido passa a ficar sinalizado como "Concluída" por lá.
+                        if (pedidoVinculado) {
+                            await marcarPedidoConcluido(pedidoVinculado);
+                        }
+                    } catch (error) {
+                        console.error('Erro ao salvar receita:', error);
+                        alert('Erro ao salvar receita.');
+                    }
+                });
+                
+                // Botão cancelar edição de receita
+                document.getElementById('btnCancelarReceita').addEventListener('click', () => {
+                    document.getElementById('formReceita').reset();
+                    document.getElementById('receitaId').value = '';
+                    pantoneOrigemAtual = '';
+                    mpEntries = [];
+                    corEntries = [];
+                    renderizarEntradas('materiasPrimas', 'materiasPrimasEmpty', mpEntries);
+                    renderizarEntradas('coloracaoPrimas', 'coloracaoPrimasEmpty', corEntries);
+                    carregarFichaModulo01ParaReceita('');
+                });
+                
+                // Configurar formulário de busca
+                document.getElementById('formBusca').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await realizarBusca();
+                });
+                
+                // Configurar import/export
+                document.getElementById('btnExportJSON').addEventListener('click', exportarJSON);
+                document.getElementById('btnExportCSV').addEventListener('click', exportarCSV);
+                document.getElementById('btnImport').addEventListener('click', () => {
+                    document.getElementById('importFile').click();
+                });
+                
+                document.getElementById('importFile').addEventListener('change', importarDados);
+                
+                // Configurar modal
+                const modal = document.getElementById('modalDetalhes');
+                const closeModal = document.querySelector('.close-modal');
+                
+                closeModal.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                });
+                
+                window.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Erro ao inicializar a aplicação:', error);
+            }
+        });
+        
+        // Funções para edição e exclusão
+        const editarFornecedor = async (id) => {
+            try {
+                const fornecedor = await getDataById('fornecedores', parseInt(id));
+                
+                if (fornecedor) {
+                    document.getElementById('fornecedorId').value = fornecedor.id;
+                    document.getElementById('fornecedorNome').value = fornecedor.nome;
+                    document.getElementById('fornecedorCidade').value = fornecedor.cidade;
+                    document.getElementById('fornecedorEstado').value = fornecedor.estado;
+                    document.getElementById('fornecedorContato').value = fornecedor.contato;
+                    document.getElementById('fornecedorEmail').value = fornecedor.email;
+                    
+                    // Rolar para o topo do formulário
+                    document.getElementById('fornecedor').scrollTop = 0;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar fornecedor para edição:', error);
+            }
+        };
+        
+        const excluirFornecedor = async (id) => {
+            if (confirm('Tem certeza que deseja excluir este fornecedor?')) {
+                try {
+                    await deleteData('fornecedores', parseInt(id));
+                    alert('Fornecedor excluído com sucesso!');
+                    await carregarFornecedores();
+                } catch (error) {
+                    console.error('Erro ao excluir fornecedor:', error);
+                    alert('Erro ao excluir fornecedor.');
+                }
+            }
+        };
+        
+        const editarProduto = async (id) => {
+            try {
+                const produto = await getDataById('produtos', parseInt(id));
+                
+                if (produto) {
+                    document.getElementById('produtoId').value = produto.id;
+                    document.getElementById('produtoFornecedor').value = produto.fornecedorId;
+                    document.getElementById('produtoNome').value = produto.nome;
+                    document.getElementById('produtoLote').value = produto.lote;
+                    document.getElementById('produtoDataFabricacao').value = produto.dataFabricacao;
+                    document.getElementById('produtoQuantidade').value = produto.quantidade;
+                    
+                    // Rolar para o topo do formulário
+                    document.getElementById('produto').scrollTop = 0;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar produto para edição:', error);
+            }
+        };
+        
+        const excluirProduto = async (id) => {
+            if (confirm('Tem certeza que deseja excluir este produto?')) {
+                try {
+                    await deleteData('produtos', parseInt(id));
+                    alert('Produto excluído com sucesso!');
+                    await carregarProdutos();
+                } catch (error) {
+                    console.error('Erro ao excluir produto:', error);
+                    alert('Erro ao excluir produto.');
+                }
+            }
+        };
+        
+        const editarReceita = async (id) => {
+            try {
+                const receita = await getDataById('receitas', parseInt(id));
+                const materiasPrimas = await getDataByIndex('materiasPrimas', 'receitaId', parseInt(id));
+                
+                if (receita) {
+                    document.getElementById('receitaId').value = receita.id;
+                    document.getElementById('receitaPantone').value = receita.pantone;
+                    document.getElementById('receitaReferencia').value = receita.referencia;
+                    document.getElementById('receitaTipo').value = receita.tipo;
+                    document.getElementById('receitaAmostraPedido').value = receita.amostraPedido;
+                    document.getElementById('receitaOP').value = receita.op || '';
+                    document.getElementById('receitaPedido').value = receita.pedido || '';
+                    mostrarInfoPedidoSelecionado(receita.pedido || '');
+                    pantoneOrigemAtual = receita.estampaOrigem || '';
+                    await carregarFichaModulo01ParaReceita(receita.referencia || '');
+                    
+                    // Repopular as listas de entradas de Matérias-Primas e Coloração
+                    mpEntries = [];
+                    corEntries = [];
+
+                    for (const materia of materiasPrimas) {
+                        const produto = await getDataById('produtos', materia.produtoId);
+                        if (!produto) continue;
+                        const fornecedor = await getDataById('fornecedores', produto.fornecedorId);
+
+                        const entrada = {
+                            produtoId: produto.id,
+                            produtoNome: produto.nome,
+                            fornecedorNome: fornecedor ? fornecedor.nome : 'N/A',
+                            lote: produto.lote,
+                            data: formatarData(produto.dataFabricacao),
+                            tipo: materia.tipo || '',
+                            quantidade: materia.quantidade ? Number(materia.quantidade).toFixed(2) : ''
+                        };
+
+                        // Registros antigos (sem "grupo") são tratados como Matéria-Prima
+                        if (materia.grupo === 'coloracao') {
+                            corEntries.push(entrada);
+                        } else {
+                            mpEntries.push(entrada);
+                        }
+                    }
+
+                    renderizarEntradas('materiasPrimas', 'materiasPrimasEmpty', mpEntries);
+                    renderizarEntradas('coloracaoPrimas', 'coloracaoPrimasEmpty', corEntries);
+
+                    // Rolar para o topo do formulário
+                    document.getElementById('receita').scrollTop = 0;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar receita para edição:', error);
+            }
+        };
+        
+        // Funções para impressão de etiqueta
+        const imprimirEtiqueta = async (id) => {
+            try {
+                const receita = await getDataById('receitas', parseInt(id));
+                
+                if (receita) {
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(`
+                        <html>
+                            <head>
+                                <title>Etiqueta - ${receita.pantone}</title>
+                                <style>
+                                    body { 
+                                        font-family: Arial, sans-serif; 
+                                        margin: 0; 
+                                        padding: 0; 
+                                        display: flex; 
+                                        justify-content: center; 
+                                        align-items: center; 
+                                        height: 100vh; 
+                                    }
+                                    .etiqueta { 
+                                        width: 9cm; 
+                                        height: 9cm; 
+                                        border: 1px solid #000; 
+                                        padding: 0.5cm; 
+                                        page-break-inside: avoid;
+                                    }
+                                    .etiqueta-titulo { 
+                                        text-align: center; 
+                                        font-size: 20px; 
+                                        font-weight: bold; 
+                                        margin-bottom: 0.5cm; 
+                                        color: #100F48; 
+                                    }
+                                    .etiqueta-campo { 
+                                        margin-bottom: 0.2cm; 
+                                    }
+                                    .etiqueta-label { 
+                                        font-weight: bold; 
+                                        display: inline-block; 
+                                        width: 2.5cm; 
+                                    }
+                                    @media print {
+                                        body { 
+                                            margin: 0; 
+                                            padding: 0; 
+                                        }
+                                        .etiqueta { 
+                                            margin: 0; 
+                                            border: none; 
+                                        }
+                                    }
+                                </style>
+                            </head>
+                            <body onload="window.print(); window.onafterprint = function() { window.close(); }">
+                                <div class="etiqueta">
+                                    <div class="etiqueta-titulo">${receita.pantone} - ${receita.tipo}</div>
+                                    <div class="etiqueta-campo"><span class="etiqueta-label">Referência:</span> ${receita.referencia}</div>
+                                    <div class="etiqueta-campo"><span class="etiqueta-label">OP:</span> ${receita.op || 'N/A'}</div>
+                                    <div class="etiqueta-campo"><span class="etiqueta-label">Tipo:</span> ${receita.amostraPedido}</div>
+                                    <div class="etiqueta-campo"><span class="etiqueta-label">Data:</span> ${formatarData(receita.dataCadastro)}</div>
+                                </div>
+                            </body>
+                        </html>
+                    `);
+                    printWindow.document.close();
+                }
+            } catch (error) {
+                console.error('Erro ao imprimir etiqueta:', error);
+                alert('Erro ao imprimir etiqueta.');
+            }
+        };
+        
+        // Funções de importação/exportação
+        const exportarJSON = async () => {
+            try {
+                const fornecedores = await getAllData('fornecedores');
+                const produtos = await getAllData('produtos');
+                const receitas = await getAllData('receitas');
+                const materiasPrimas = await getAllData('materiasPrimas');
+                
+                const data = {
+                    fornecedores,
+                    produtos,
+                    receitas,
+                    materiasPrimas
+                };
+                
+                const dataStr = JSON.stringify(data, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = 'insumos_data.json';
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+            } catch (error) {
+                console.error('Erro ao exportar JSON:', error);
+                alert('Erro ao exportar dados.');
+            }
+        };
+        
+        const exportarCSV = async () => {
+            try {
+                // Coletar todos os dados
+                const fornecedores = await getAllData('fornecedores');
+                const produtos = await getAllData('produtos');
+                const receitas = await getAllData('receitas');
+                const materiasPrimas = await getAllData('materiasPrimas');
+                
+                // Converter cada conjunto de dados para CSV
+                const csvFornecedores = converterParaCSV(fornecedores, 'fornecedores');
+                const csvProdutos = converterParaCSV(produtos, 'produtos');
+                const csvReceitas = converterParaCSV(receitas, 'receitas');
+                const csvMateriasPrimas = converterParaCSV(materiasPrimas, 'materias-primas');
+                
+                // Combinar todos os CSVs
+                const csvCompleto = `${csvFornecedores}\n\n${csvProdutos}\n\n${csvReceitas}\n\n${csvMateriasPrimas}`;
+                
+                // Criar e baixar o arquivo
+                const dataUri = 'data:text/csv;charset=utf-8,'+ encodeURIComponent(csvCompleto);
+                const exportFileDefaultName = 'insumos_data.csv';
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+            } catch (error) {
+                console.error('Erro ao exportar CSV:', error);
+                alert('Erro ao exportar dados.');
+            }
+        };
+        
+        const converterParaCSV = (objArray, tipo) => {
+            if (objArray.length === 0) return `# ${tipo}\nNenhum dado disponível`;
+            
+            const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray;
+            let str = `# ${tipo}\n`;
+            
+            // Cabeçalho
+            const headers = Object.keys(array[0]);
+            str += headers.join(',') + '\r\n';
+            
+            // Dados
+            for (let i = 0; i < array.length; i++) {
+                let line = '';
+                for (let j = 0; j < headers.length; j++) {
+                    if (line !== '') line += ',';
+                    line += array[i][headers[j]];
+                }
+                str += line + '\r\n';
+            }
+            
+            return str;
+        };
+        
+        const importarDados = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+
+                    // Limpar dados existentes no banco do navegador
+                    for (const storeName of STORES) {
+                        await clearStore(storeName);
+                    }
+
+                    // Adicionar novos dados, preservando os ids originais para manter os vínculos
+                    // entre fornecedor → produto → receita → matéria-prima
+                    for (const storeName of STORES) {
+                        if (data[storeName]) {
+                            for (const item of data[storeName]) {
+                                if (item.id !== undefined && item.id !== null) {
+                                    await window.storage.set(storeKey(storeName, item.id), JSON.stringify(item), false);
+                                } else {
+                                    await addData(storeName, item);
+                                }
+                            }
+                            const all = await getAllData(storeName);
+                            idCounters[storeName] = all.reduce((max, i) => Math.max(max, i.id || 0), 0) + 1;
+                        }
+                    }
+
+                    alert('Dados importados com sucesso!');
+                    await carregarFornecedores();
+                    await carregarProdutos();
+                    await carregarReceitas();
+                } catch (error) {
+                    console.error('Erro ao importar dados:', error);
+                    alert('Erro ao importar dados. Verifique o formato do arquivo.');
+                }
+            };
+            reader.readAsText(file);
+        };
+        
+        // Função de busca avançada
+        let ultimaBuscaResultados = []; // cache dos últimos resultados, usado pela impressão em lote
+
+        const realizarBusca = async () => {
+            try {
+                const pantone = document.getElementById('buscaPantone').value;
+                const referencia = document.getElementById('buscaReferencia').value;
+                const estampaFiltro = document.getElementById('buscaEstampa').value;
+                const pedidoFiltro = document.getElementById('buscaPedido').value;
+                const opFiltro = document.getElementById('buscaOp').value;
+                const statusFiltro = document.getElementById('buscaStatusPedido').value;
+                const produto = document.getElementById('buscaProduto').value;
+                const lote = document.getElementById('buscaLote').value;
+                const dataDe = document.getElementById('buscaDataDe').value;
+                const dataAte = document.getElementById('buscaDataAte').value;
+                
+                let receitas = await getAllData('receitas');
+                
+                // Filtrar por pantone
+                if (pantone) {
+                    receitas = receitas.filter(r => 
+                        r.pantone.toLowerCase().includes(pantone.toLowerCase())
+                    );
+                }
+                
+                // Filtrar por referência
+                if (referencia) {
+                    receitas = receitas.filter(r => 
+                        r.referencia.toLowerCase().includes(referencia.toLowerCase())
+                    );
+                }
+
+                // Filtrar por estampa de origem
+                if (estampaFiltro) {
+                    receitas = receitas.filter(r =>
+                        (r.estampaOrigem || '').toLowerCase().includes(estampaFiltro.toLowerCase())
+                    );
+                }
+
+                // Filtrar por pedido (Módulo 02)
+                if (pedidoFiltro) {
+                    receitas = receitas.filter(r =>
+                        (r.pedido || '').toLowerCase().includes(pedidoFiltro.toLowerCase())
+                    );
+                }
+
+                // Filtrar por ordem de produção (texto salvo no campo OP da receita)
+                if (opFiltro) {
+                    receitas = receitas.filter(r =>
+                        (r.op || '').toLowerCase().includes(opFiltro.toLowerCase())
+                    );
+                }
+
+                // Filtrar por status do pedido vinculado (busca o status atual no Módulo 02)
+                if (statusFiltro) {
+                    if (statusFiltro === 'nenhum') {
+                        receitas = receitas.filter(r => !r.pedido);
+                    } else {
+                        await carregarPedidosDoModulo02();
+                        const statusPorPedido = {};
+                        pedidosDisponiveis.forEach(p => { statusPorPedido[p.pedido] = p.status === 'concluida' ? 'concluida' : 'pendente'; });
+                        receitas = receitas.filter(r => r.pedido && statusPorPedido[r.pedido] === statusFiltro);
+                    }
+                }
+
+                // Filtrar por período de cadastro
+                if (dataDe) {
+                    receitas = receitas.filter(r => r.dataCadastro && r.dataCadastro.slice(0,10) >= dataDe);
+                }
+                if (dataAte) {
+                    receitas = receitas.filter(r => r.dataCadastro && r.dataCadastro.slice(0,10) <= dataAte);
+                }
+                
+                // Filtrar por produto e lote (requer join com matérias-primas, produtos e fornecedores)
+                if (produto || lote) {
+                    const materiasPrimas = await getAllData('materiasPrimas');
+                    const produtos = await getAllData('produtos');
+                    const fornecedoresList = await getAllData('fornecedores');
+                    const fornecedoresMap = {};
+                    fornecedoresList.forEach(f => { fornecedoresMap[f.id] = f.nome || ''; });
+
+                    const produtoBusca = (produto || '').toLowerCase();
+                    const loteBusca = (lote || '').toLowerCase();
+
+                    receitas = receitas.filter(receita => {
+                        const materias = materiasPrimas.filter(mp => mp.receitaId === receita.id);
+
+                        return materias.some(materia => {
+                            const prod = produtos.find(p => p.id === materia.produtoId);
+                            if (!prod) return false;
+
+                            const nomeProduto = (prod.nome || '').toLowerCase();
+                            const nomeFornecedor = (fornecedoresMap[prod.fornecedorId] || '').toLowerCase();
+                            const loteProduto = (prod.lote || '').toLowerCase();
+
+                            const matchProduto = produtoBusca
+                                ? (nomeProduto.includes(produtoBusca) || nomeFornecedor.includes(produtoBusca))
+                                : true;
+                            const matchLote = loteBusca ? loteProduto.includes(loteBusca) : true;
+
+                            return matchProduto && matchLote;
+                        });
+                    });
+                }
+                
+                // Atualizar tabela de resultados — organizados por referência, estampa e pantone
+                const receitasOrdenadas = [...receitas].sort((a, b) => {
+                    return (a.referencia||'').localeCompare(b.referencia||'')
+                        || (a.estampaOrigem||'').localeCompare(b.estampaOrigem||'')
+                        || (a.pantone||'').localeCompare(b.pantone||'');
+                });
+                ultimaBuscaResultados = receitasOrdenadas;
+
+                const contagemEl = document.getElementById('buscaContagem');
+                if (contagemEl) {
+                    contagemEl.textContent = receitasOrdenadas.length
+                        ? `· ${receitasOrdenadas.length} receita(s) encontrada(s)`
+                        : '· nenhuma receita encontrada para este filtro';
+                }
+
+                const tbody = document.querySelector('#tabelaBusca tbody');
+                tbody.innerHTML = '';
+
+                if (receitasOrdenadas.length === 0) {
+                    const dicaProdutoLote = (produto || lote)
+                        ? ' Busca por Produto/Lote só encontra receitas que já têm uma Matéria-Prima ou Coloração vinculada a esse produto (cadastrada no formulário da Receita).'
+                        : '';
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:22px;">Nenhuma receita encontrada para este filtro.' + dicaProdutoLote + '</td></tr>';
+                    return;
+                }
+                
+                for (const receita of receitasOrdenadas) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${receita.referencia}</td>
+                        <td>${receita.estampaOrigem || '—'}</td>
+                        <td>${receita.pantone}</td>
+                        <td>${receita.tipo}</td>
+                        <td>${receita.amostraPedido}</td>
+                        <td>${receita.op || 'N/A'}</td>
+                        <td>${receita.pedido || '—'}</td>
+                        <td>${formatarData(receita.dataCadastro)}</td>
+                        <td class="action-buttons">
+                            <button class="detalhes-receita" data-id="${receita.id}">Detalhes</button>
+                            <button class="editar-receita" data-id="${receita.id}">Editar</button>
+                            <button class="excluir-receita danger" data-id="${receita.id}">Excluir</button>
+                            <button class="imprimir-receita" data-id="${receita.id}">Imprimir</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+                
+                // Adicionar event listeners para os botões de ação
+                document.querySelectorAll('.detalhes-receita').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        mostrarDetalhesReceita(id);
+                    });
+                });
+                
+                document.querySelectorAll('.editar-receita').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        editarReceita(id);
+                    });
+                });
+                
+                document.querySelectorAll('.excluir-receita').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        excluirReceita(id);
+                    });
+                });
+                
+                document.querySelectorAll('.imprimir-receita').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        imprimirEtiqueta(id);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Erro ao realizar busca:', error);
+                alert('Erro ao realizar busca.');
+            }
+        };
+
+        // Limpar todos os filtros da busca avançada
+        const limparFiltrosBusca = () => {
+            document.getElementById('buscaPantone').value = '';
+            document.getElementById('buscaReferencia').value = '';
+            document.getElementById('buscaEstampa').value = '';
+            document.getElementById('buscaPedido').value = '';
+            document.getElementById('buscaOp').value = '';
+            document.getElementById('buscaStatusPedido').value = '';
+            document.getElementById('buscaProduto').value = '';
+            document.getElementById('buscaLote').value = '';
+            document.getElementById('buscaDataDe').value = '';
+            document.getElementById('buscaDataAte').value = '';
+            realizarBusca();
+        };
+
+        // Impressão em lote — gera um relatório consultável com todas as receitas
+        // que estão atualmente na lista de resultados da Busca Avançada (com matéria-prima e coloração)
+        const imprimirResultadosBusca = async () => {
+            if (!ultimaBuscaResultados || ultimaBuscaResultados.length === 0) {
+                alert('Nenhum resultado para imprimir. Faça uma busca primeiro.');
+                return;
+            }
+            try {
+                const produtos = await getAllData('produtos');
+                const fornecedores = await getAllData('fornecedores');
+                const produtosMap = {}; produtos.forEach(p => produtosMap[p.id] = p);
+                const fornecedoresMap = {}; fornecedores.forEach(f => fornecedoresMap[f.id] = f.nome);
+
+                const blocos = [];
+                for (const receita of ultimaBuscaResultados) {
+                    const materiasPrimas = await getDataByIndex('materiasPrimas', 'receitaId', receita.id);
+                    const listaMateriasPrimas = materiasPrimas.filter(m => m.grupo !== 'coloracao');
+                    const listaColoracao = materiasPrimas.filter(m => m.grupo === 'coloracao');
+
+                    const linhaGrupo = (lista) => {
+                        if (!lista.length) return '<tr><td colspan="4" style="color:#888;">Nenhum item cadastrado.</td></tr>';
+                        return lista.map(m => {
+                            const produto = produtosMap[m.produtoId];
+                            const fornecedor = produto ? fornecedoresMap[produto.fornecedorId] : null;
+                            return `<tr>
+                                <td>${fornecedor || 'N/A'}</td>
+                                <td>${produto ? produto.nome : 'N/A'}</td>
+                                <td>${produto ? produto.lote : '—'}</td>
+                                <td>${m.quantidade || 0} kg</td>
+                            </tr>`;
+                        }).join('');
+                    };
+
+                    blocos.push(`
+                        <div class="rel-receita">
+                            <div class="rel-receita-head">
+                                <div>
+                                    <div class="rel-pantone">${receita.pantone}</div>
+                                    <div class="rel-sub">Estampa: ${receita.estampaOrigem || '—'} &nbsp;·&nbsp; Referência: ${receita.referencia} &nbsp;·&nbsp; Tipo: ${receita.tipo}</div>
+                                    <div class="rel-sub">Amostra/Pedido: ${receita.amostraPedido} &nbsp;·&nbsp; OP: ${receita.op || 'N/A'} &nbsp;·&nbsp; Pedido (Mód. 02): ${receita.pedido || '—'}</div>
+                                    <div class="rel-sub">Cadastrada em: ${formatarData(receita.dataCadastro)}</div>
+                                </div>
+                            </div>
+                            <div class="rel-grupo-title">Matérias-Primas</div>
+                            <table class="rel-table"><thead><tr><th>Fornecedor</th><th>Produto</th><th>Lote</th><th>Qtd.</th></tr></thead><tbody>${linhaGrupo(listaMateriasPrimas)}</tbody></table>
+                            <div class="rel-grupo-title">Coloração</div>
+                            <table class="rel-table"><thead><tr><th>Fornecedor</th><th>Produto</th><th>Lote</th><th>Qtd.</th></tr></thead><tbody>${linhaGrupo(listaColoracao)}</tbody></table>
+                        </div>
+                    `);
+                }
+
+                const agora = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>Relatório de Receitas — Laboratório de Tinta</title>
+                            <style>
+                                * { box-sizing: border-box; }
+                                body { font-family: Arial, sans-serif; margin: 0; padding: 24px; color: #161A3B; }
+                                .rel-header { display:flex; justify-content:space-between; align-items:flex-end; border-bottom: 3px solid #0E1638; padding-bottom: 10px; margin-bottom: 18px; }
+                                .rel-brand { font-weight: 800; font-size: 15px; letter-spacing: .05em; color: #0E1638; }
+                                .rel-meta { font-size: 11px; color: #6A6F94; }
+                                .rel-count { font-size: 12px; color: #6A6F94; margin-bottom: 14px; }
+                                .rel-receita { border: 1.5px solid #d8dae8; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; page-break-inside: avoid; }
+                                .rel-pantone { font-size: 17px; font-weight: 800; color: #0E1638; }
+                                .rel-sub { font-size: 11.5px; color: #444; margin-top: 2px; }
+                                .rel-grupo-title { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: #5B4FE8; margin: 10px 0 4px; }
+                                .rel-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                                .rel-table th { text-align: left; background: #EEF1F8; padding: 5px 8px; font-size: 9.5px; text-transform: uppercase; border-bottom: 2px solid #0E1638; }
+                                .rel-table td { padding: 5px 8px; border-bottom: 1px solid #E1E4F0; }
+                                @media print {
+                                    body { padding: 10mm; }
+                                    @page { size: A4; margin: 12mm; }
+                                }
+                            </style>
+                        </head>
+                        <body onload="window.print(); window.onafterprint = function(){ window.close(); }">
+                            <div class="rel-header">
+                                <div class="rel-brand">SGE — LABORATÓRIO DE TINTA · RELATÓRIO DE RECEITAS</div>
+                                <div class="rel-meta">Emitido em ${agora}</div>
+                            </div>
+                            <div class="rel-count">${ultimaBuscaResultados.length} receita(s) — resultado da Busca Avançada, filtros aplicados no momento da impressão</div>
+                            ${blocos.join('')}
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            } catch (error) {
+                console.error('Erro ao gerar relatório de receitas:', error);
+                alert('Erro ao gerar o relatório para impressão.');
+            }
+        };
+
+        document.getElementById('btnLimparBusca').addEventListener('click', limparFiltrosBusca);
+        document.getElementById('btnImprimirResultados').addEventListener('click', imprimirResultadosBusca);
+        
+        // Funções para visualização de detalhes
+        const mostrarDetalhesReceita = async (id) => {
+            try {
+                const receita = await getDataById('receitas', parseInt(id));
+                const materiasPrimas = await getDataByIndex('materiasPrimas', 'receitaId', parseInt(id));
+                const produtos = await getAllData('produtos');
+                const fornecedores = await getAllData('fornecedores');
+                
+                // Criar mapas para fácil acesso
+                const produtosMap = {};
+                produtos.forEach(p => {
+                    produtosMap[p.id] = p;
+                });
+                
+                const fornecedoresMap = {};
+                fornecedores.forEach(f => {
+                    fornecedoresMap[f.id] = f.nome;
+                });
+                
+                let html = `
+                    <div class="form-group">
+                        <label>Pantone:</label>
+                        <div>${receita.pantone}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Estampa:</label>
+                        <div>${receita.estampaOrigem || '—'}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Referência:</label>
+                        <div>${receita.referencia}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo:</label>
+                        <div>${receita.tipo}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Amostra/Pedido:</label>
+                        <div>${receita.amostraPedido}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>OP:</label>
+                        <div>${receita.op || 'N/A'}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Pedido (Módulo 02):</label>
+                        <div>${receita.pedido || 'Nenhum — receita avulsa'}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Data de Cadastro:</label>
+                        <div>${formatarData(receita.dataCadastro)}</div>
+                    </div>
+                    
+                `;
+
+                const gerarTabelaGrupo = (titulo, lista) => {
+                    let bloco = `<h3 style="margin-top: 1.5rem;">${titulo}</h3>`;
+                    if (!lista.length) {
+                        bloco += `<p style="font-size:12.5px;color:var(--text-muted);">Nenhum item adicionado.</p>`;
+                        return bloco;
+                    }
+                    bloco += `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fornecedor</th>
+                                    <th>Produto</th>
+                                    <th>Lote</th>
+                                    <th>Data Fab.</th>
+                                    <th>Quantidade (kg)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    for (const materia of lista) {
+                        const produto = produtosMap[materia.produtoId];
+                        if (produto) {
+                            const fornecedor = fornecedoresMap[produto.fornecedorId];
+                            bloco += `
+                                <tr>
+                                    <td>${fornecedor || 'N/A'}</td>
+                                    <td>${produto.nome}</td>
+                                    <td>${produto.lote}</td>
+                                    <td>${formatarData(produto.dataFabricacao)}</td>
+                                    <td>${materia.quantidade}</td>
+                                </tr>
+                            `;
+                        }
+                    }
+                    bloco += `</tbody></table>`;
+                    return bloco;
+                };
+
+                // Registros antigos (sem "grupo") são tratados como Matéria-Prima
+                const listaMateriasPrimas = materiasPrimas.filter(m => m.grupo !== 'coloracao');
+                const listaColoracao = materiasPrimas.filter(m => m.grupo === 'coloracao');
+
+                html += gerarTabelaGrupo('Matérias-Primas', listaMateriasPrimas);
+                html += gerarTabelaGrupo('Coloração', listaColoracao);
+                
+                document.getElementById('modalTitulo').textContent = `Detalhes da Receita: ${receita.pantone}`;
+                document.getElementById('modalConteudo').innerHTML = html;
+                document.getElementById('modalDetalhes').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Erro ao carregar detalhes da receita:', error);
+                alert('Erro ao carregar detalhes da receita.');
+            }
+        };
+        
+        const excluirReceita = async (id) => {
+            if (confirm('Tem certeza que deseja excluir esta receita?')) {
+                try {
+                    // Primeiro excluir as matérias-primas associadas
+                    const materiasPrimas = await getDataByIndex('materiasPrimas', 'receitaId', parseInt(id));
+                    for (const materia of materiasPrimas) {
+                        await deleteData('materiasPrimas', materia.id);
+                    }
+                    
+                    // Depois excluir a receita
+                    await deleteData('receitas', parseInt(id));
+                    
+                    alert('Receita excluída com sucesso!');
+                    await carregarReceitas();
+                    
+                    // Se estiver na seção de busca, atualizar a busca também
+                    if (document.getElementById('busca').classList.contains('active')) {
+                        await realizarBusca();
+                    }
+                } catch (error) {
+                    console.error('Erro ao excluir receita:', error);
+                    alert('Erro ao excluir receita.');
+                }
+            }
+        };
+    </script>
+</body>
+</html>

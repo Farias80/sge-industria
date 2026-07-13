@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGE · Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+:root{
+  --navy-900:#0E1638;
+  --navy-800:#141F4D;
+  --navy-700:#1C2A5E;
+  --indigo-600:#5B4FE8;
+  --indigo-500:#6E63EE;
+  --indigo-50:#EEECFD;
+  --bg:#EEF1F8;
+  --card:#FFFFFF;
+  --border:#E1E4F0;
+  --text:#161A3B;
+  --text-muted:#6A6F94;
+  --danger:#DC3630;
+  --danger-50:#FCEAE9;
+  --ok:#1C9A6C;
+  --ok-50:#E7F7F1;
+  --warn:#B4780B;
+  --warn-50:#FBF1E1;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(20,25,70,.04), 0 8px 24px -12px rgba(20,25,70,.12);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;min-height:100%;}
+body{
+  background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column;
+}
+h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+.topbar{
+  background:linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-image:radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 1.5px), linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-size:14px 14px, auto;
+  color:#fff;padding:22px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.back-btn{
+  display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;cursor:pointer;
+  text-decoration:none;transition:background .15s ease;
+}
+.back-btn:hover{background:rgba(255,255,255,.16);}
+.back-btn svg{width:18px;height:18px;}
+.topbar h1{margin:0;font-weight:800;font-size:22px;letter-spacing:.01em;}
+.topbar-sub{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
+.refresh-btn{
+  display:flex;align-items:center;gap:8px;background:var(--indigo-600);border:none;color:#fff;
+  font-family:'Sora',sans-serif;font-weight:700;font-size:13px;padding:10px 16px;border-radius:10px;
+  cursor:pointer;transition:background .15s ease;
+}
+.refresh-btn:hover{background:var(--indigo-500);}
+.refresh-btn svg{width:15px;height:15px;}
+.refresh-btn.spinning svg{animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+main{flex:1;padding:32px 24px 48px;display:flex;flex-direction:column;align-items:center;}
+.dash-wrap{max-width:1280px;width:100%;}
+
+.status-line{
+  font-size:12px;color:var(--text-muted);margin-bottom:18px;display:flex;align-items:center;gap:8px;
+}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex-shrink:0;}
+.status-dot.warn{background:var(--warn);}
+
+.grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
+}
+@media (max-width:980px){.grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:620px){.grid{grid-template-columns:1fr;}}
+
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:22px 22px 20px;display:flex;flex-direction:column;gap:12px;
+  min-height:0;
+}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.card-icon{
+  width:38px;height:38px;border-radius:10px;background:var(--indigo-50);color:var(--indigo-600);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.card-icon svg{width:20px;height:20px;}
+.card-title{font-family:'Sora',sans-serif;font-weight:700;font-size:14.5px;color:var(--navy-900);}
+.card-sub{font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.4;}
+.card-big{font-family:'Sora',sans-serif;font-weight:800;font-size:34px;color:var(--navy-900);line-height:1;}
+.card-big .unit{font-size:15px;font-weight:600;color:var(--text-muted);margin-left:4px;}
+.card-foot{font-size:11.5px;color:var(--text-muted);}
+
+.mini-list{display:flex;flex-direction:column;gap:6px;margin-top:2px;max-height:170px;overflow-y:auto;}
+.mini-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;
+  padding:7px 9px;border-radius:8px;background:#F7F8FC;border:1px solid var(--border);
+}
+.mini-row .name{font-weight:600;color:var(--navy-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mini-row .val{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text-muted);flex-shrink:0;}
+.mini-row.low .val{color:var(--danger);}
+.empty-mini{font-size:12px;color:var(--text-muted);padding:10px 4px;text-align:center;}
+
+.pill{
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:100px;
+  text-transform:uppercase;letter-spacing:.03em;
+}
+.pill.ok{background:var(--ok-50);color:var(--ok);}
+.pill.danger{background:var(--danger-50);color:var(--danger);}
+.pill.warn{background:var(--warn-50);color:var(--warn);}
+
+.threshold-row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text-muted);margin-top:-4px;}
+.threshold-row input{
+  width:64px;padding:4px 7px;border-radius:7px;border:1px solid var(--border);font-family:'JetBrains Mono',monospace;
+  font-size:12px;color:var(--navy-900);
+}
+
+.bar-track{width:100%;height:10px;border-radius:100px;background:#F1F2F8;overflow:hidden;display:flex;}
+.bar-seg{height:100%;}
+.bar-seg.aprovado{background:var(--ok);}
+.bar-seg.reprovado{background:var(--danger);}
+.bar-seg.pendente{background:#D8DBEC;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text-muted);}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{width:8px;height:8px;border-radius:2px;display:inline-block;}
+.legend i.aprovado{background:var(--ok);}
+.legend i.reprovado{background:var(--danger);}
+.legend i.pendente{background:#D8DBEC;}
+
+.card.wide{grid-column:span 1;}
+footer{text-align:center;padding:18px 0;color:var(--text-muted);font-size:12px;}
+footer a{color:var(--text-muted);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a class="back-btn" href="modulo-00.html" title="Voltar ao menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+    </a>
+    <div>
+      <h1>Dashboard</h1>
+      <div class="topbar-sub">Visão geral do SGE · dados em tempo real do Supabase</div>
+    </div>
+  </div>
+  <button class="refresh-btn" id="btnRefresh">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+    Atualizar
+  </button>
+</div>
+
+<main>
+  <div class="dash-wrap">
+    <div class="status-line"><span class="status-dot" id="statusDot"></span><span id="statusText">Carregando dados…</span></div>
+
+    <div class="grid">
+
+      <!-- 1. Matéria-prima -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Controle de Matéria-Prima</div>
+            <div class="card-sub">Lotes cadastrados no Módulo 03</div>
+          </div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"/><path d="M3 8v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8"/><path d="M3 8h18"/></svg>
+          </div>
+        </div>
+        <div class="card-big" id="mpTotal">—<span class="unit">lotes</span></div>
+        <div class="card-foot" id="mpFoot">carregando…</div>
+        <div class="mini-list" id="mpList"></div>
+      </div>
+
+      <!-- 2. Receitas cadastradas -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Receitas Cadastradas</div>
+            <div class="card-sub">Total no Módulo 03 · Laboratório de Tinta</div>
+          </div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v6.2L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 8.2V2"/><path d="M9 2h6"/><path d="M7.5 15h9"/></svg>
+          </div>
+        </div>
+        <div class="card-big" id="recTotal">—<span class="unit">receitas</span></div>
+        <div class="card-foot" id="recFoot">carregando…</div>
+        <div class="mini-list" id="recList"></div>
+      </div>
+
+      <!-- 3. Estoque baixo -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Insumos com Estoque Baixo</div>
+            <div class="card-sub">Lotes de matéria-prima abaixo do limite</div>
+          </div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          </div>
+        </div>
+        <div class="threshold-row">
+          Limite de alerta:
+          <input type="number" id="limiteEstoque" min="0" step="0.5" value="10"> kg
+        </div>
+        <div class="card-big" id="baixoTotal">—<span class="unit">itens</span></div>
+        <div class="mini-list" id="baixoList"></div>
+      </div>
+
+      <!-- 4. OPs em andamento -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Ordens de Produção (OPs)</div>
+            <div class="card-sub">Pedidos pendentes no Módulo 02 · Estamparia</div>
+          </div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="17" rx="2"/><path d="M7 8h6M7 12h6M7 16h4"/></svg>
+          </div>
+        </div>
+        <div class="card-big" id="opTotal">—<span class="unit">em andamento</span></div>
+        <div class="card-foot" id="opFoot">carregando…</div>
+        <div class="mini-list" id="opList"></div>
+      </div>
+
+      <!-- 5. Consumo médio por peça -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Consumo Médio por Peça</div>
+            <div class="card-sub">Matéria-prima + coloração ÷ peças do pedido</div>
+          </div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          </div>
+        </div>
+        <div class="card-big" id="consumoMedio">—<span class="unit">kg/peça</span></div>
+        <div class="card-foot" id="consumoFoot">carregando…</div>
+      </div>
+
+      <!-- 6. Qualidade -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Indicadores de Qualidade</div>
+            <div class="card-sub">Testes registrados no Módulo 04</div>
+          </div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+        </div>
+        <div class="card-big" id="qualTotal">—<span class="unit">testes</span></div>
+        <div class="bar-track" id="qualBar"></div>
+        <div class="legend">
+          <span><i class="aprovado"></i>Aprovados <b id="qualAprov">0</b></span>
+          <span><i class="reprovado"></i>Reprovados <b id="qualReprov">0</b></span>
+          <span><i class="pendente"></i>Pendentes <b id="qualPend">0</b></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>Sistema SGE v1.0</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/supabase-client.js"></script>
+
+<script>
+/* ---------- Helpers ---------- */
+function fmtKg(n){
+  return (Math.round((n + Number.EPSILON) * 100) / 100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- Carregamento principal (dados reais do Supabase) ---------- */
+async function carregarDashboard(){
+  const btn = document.getElementById('btnRefresh');
+  btn.classList.add('spinning');
+  document.getElementById('statusText').textContent = 'Carregando dados…';
+
+  try{
+    const sb = window.sgeSupabase;
+    const [
+      { data: produtos, error: e1 },
+      { data: fornecedores, error: e2 },
+      { data: receitas, error: e3 },
+      { data: receitaItens, error: e4 },
+      { data: pedidos, error: e5 },
+      { data: ordens, error: e6 },
+      { data: registros, error: e7 }
+    ] = await Promise.all([
+      sb.from('produtos').select('*'),
+      sb.from('fornecedores').select('*'),
+      sb.from('receitas').select('*'),
+      sb.from('receita_itens').select('*'),
+      sb.from('pedidos').select('*'),
+      sb.from('ordens_producao').select('*'),
+      sb.from('registros_qualidade').select('*')
+    ]);
+
+    const erro = e1 || e2 || e3 || e4 || e5 || e6 || e7;
+    if(erro) throw erro;
+
+    const produtosL = produtos || [], fornecedoresL = fornecedores || [], receitasL = receitas || [];
+    const receitaItensL = receitaItens || [], pedidosL = pedidos || [], ordensL = ordens || [], registrosL = registros || [];
+
+    const fornecedorNome = id => {
+      const f = fornecedoresL.find(x => String(x.id) === String(id));
+      return f ? f.nome : '—';
+    };
+
+    /* 1. Matéria-prima */
+    const totalKg = produtosL.reduce((s, p) => s + (parseFloat(p.quantidade) || 0), 0);
+    document.getElementById('mpTotal').innerHTML = produtosL.length + '<span class="unit">lotes</span>';
+    document.getElementById('mpFoot').textContent = produtosL.length
+      ? fmtKg(totalKg) + ' kg no total · ' + fornecedoresL.length + ' fornecedor(es)'
+      : 'Nenhum lote cadastrado ainda';
+    const mpTop = produtosL.slice().sort((a,b) => (parseFloat(b.quantidade)||0) - (parseFloat(a.quantidade)||0)).slice(0,5);
+    document.getElementById('mpList').innerHTML = mpTop.length ? mpTop.map(p => `
+      <div class="mini-row"><span class="name">${escapeHtml(p.nome)} · ${escapeHtml(fornecedorNome(p.fornecedor_id))}</span><span class="val">${fmtKg(parseFloat(p.quantidade)||0)} kg</span></div>
+    `).join('') : '<div class="empty-mini">Nenhum insumo cadastrado</div>';
+
+    /* 2. Receitas */
+    document.getElementById('recTotal').innerHTML = receitasL.length + '<span class="unit">receitas</span>';
+    const amostras = receitasL.filter(r => r.amostra_pedido === 'Amostra').length;
+    const pedidosR = receitasL.filter(r => r.amostra_pedido === 'Pedido').length;
+    document.getElementById('recFoot').textContent = receitasL.length
+      ? amostras + ' amostra(s) · ' + pedidosR + ' vinculada(s) a pedido'
+      : 'Nenhuma receita cadastrada ainda';
+    const recRecent = receitasL.slice().sort((a,b) => new Date(b.criado_em||0) - new Date(a.criado_em||0)).slice(0,5);
+    document.getElementById('recList').innerHTML = recRecent.length ? recRecent.map(r => `
+      <div class="mini-row"><span class="name">${escapeHtml(r.pantone||'—')} · ${escapeHtml(r.referencia||'—')}</span><span class="val">${escapeHtml(r.op||r.amostra_pedido||'—')}</span></div>
+    `).join('') : '<div class="empty-mini">Nenhuma receita cadastrada</div>';
+
+    /* 3. Estoque baixo */
+    const limiteInput = document.getElementById('limiteEstoque');
+    let limite = parseFloat(limiteInput.value);
+    if(isNaN(limite)) limite = 10;
+    const baixos = produtosL.filter(p => (parseFloat(p.quantidade)||0) < limite).sort((a,b) => (parseFloat(a.quantidade)||0) - (parseFloat(b.quantidade)||0));
+    document.getElementById('baixoTotal').innerHTML = baixos.length + '<span class="unit">itens</span>';
+    document.getElementById('baixoList').innerHTML = baixos.length ? baixos.slice(0,6).map(p => `
+      <div class="mini-row low"><span class="name">${escapeHtml(p.nome)} · lote ${escapeHtml(p.lote||'—')}</span><span class="val">${fmtKg(parseFloat(p.quantidade)||0)} kg</span></div>
+    `).join('') : (produtosL.length ? '<div class="empty-mini">Nenhum item abaixo do limite 🎉</div>' : '<div class="empty-mini">Sem dados de estoque</div>');
+
+    /* 4. OPs em andamento (pedidos com status pendente) */
+    const pendentes = pedidosL.filter(p => (p.status || 'pendente') !== 'concluida');
+    const concluidos = pedidosL.filter(p => p.status === 'concluida');
+    const ordensPorPedido = {};
+    ordensL.forEach(o => { (ordensPorPedido[o.pedido_id] = ordensPorPedido[o.pedido_id] || []).push(o); });
+    let totalOpsPendentes = 0, totalPecasPendentes = 0;
+    pendentes.forEach(p => {
+      const os = ordensPorPedido[p.id] || [];
+      totalOpsPendentes += os.length;
+      totalPecasPendentes += os.reduce((s,o) => s + (parseFloat(o.quantidade)||0), 0);
+    });
+    document.getElementById('opTotal').innerHTML = totalOpsPendentes + '<span class="unit">em andamento</span>';
+    document.getElementById('opFoot').textContent = pedidosL.length
+      ? totalPecasPendentes.toLocaleString('pt-BR') + ' peça(s) em produção · ' + concluidos.length + ' pedido(s) concluído(s)'
+      : 'Nenhum pedido cadastrado ainda';
+    const opListItems = [];
+    pendentes.forEach(p => (ordensPorPedido[p.id]||[]).forEach(o => opListItems.push({ pedido: p.numero, numero: o.numero, quantidade: o.quantidade })));
+    document.getElementById('opList').innerHTML = opListItems.length ? opListItems.slice(0,6).map(o => `
+      <div class="mini-row"><span class="name">${escapeHtml(o.numero||'OP')} · pedido ${escapeHtml(o.pedido)}</span><span class="val">${escapeHtml(o.quantidade||'0')} pç</span></div>
+    `).join('') : '<div class="empty-mini">Nenhuma OP em andamento</div>';
+
+    /* 5. Consumo médio por peça (receitas vinculadas a um pedido) */
+    const pedidoById = {};
+    pedidosL.forEach(p => { pedidoById[p.id] = p; });
+    const itensPorReceita = {};
+    receitaItensL.forEach(it => { (itensPorReceita[it.receita_id] = itensPorReceita[it.receita_id] || []).push(it); });
+
+    let somaConsumo = 0, baseCalculo = 0;
+    receitasL.forEach(r => {
+      const itens = itensPorReceita[r.id] || [];
+      const kgReceita = itens.reduce((s,it) => s + (parseFloat(it.quantidade)||0), 0);
+      const pedidoVinculado = r.pedido_id ? pedidoById[r.pedido_id] : null;
+      const pecas = pedidoVinculado ? (ordensPorPedido[pedidoVinculado.id]||[]).reduce((s,o) => s + (parseFloat(o.quantidade)||0), 0) : 0;
+      if(kgReceita > 0 && pecas > 0){
+        somaConsumo += (kgReceita / pecas);
+        baseCalculo += 1;
+      }
+    });
+    if(baseCalculo > 0){
+      document.getElementById('consumoMedio').innerHTML = fmtKg(somaConsumo/baseCalculo) + '<span class="unit">kg/peça</span>';
+      document.getElementById('consumoFoot').textContent = 'Calculado com base em ' + baseCalculo + ' receita(s) vinculada(s) a pedido';
+    } else {
+      document.getElementById('consumoMedio').innerHTML = '—<span class="unit">kg/peça</span>';
+      document.getElementById('consumoFoot').textContent = 'Vincule receitas a um pedido (Módulo 02) para calcular';
+    }
+
+    /* 6. Qualidade */
+    const aprov = registrosL.filter(r => r.status === 'aprovado').length;
+    const reprov = registrosL.filter(r => r.status === 'reprovado').length;
+    const pend = registrosL.length - aprov - reprov;
+    document.getElementById('qualTotal').innerHTML = registrosL.length + '<span class="unit">testes</span>';
+    document.getElementById('qualAprov').textContent = aprov;
+    document.getElementById('qualReprov').textContent = reprov;
+    document.getElementById('qualPend').textContent = pend;
+    const total6 = registrosL.length || 1;
+    document.getElementById('qualBar').innerHTML = registrosL.length ? `
+      <div class="bar-seg aprovado" style="width:${(aprov/total6)*100}%"></div>
+      <div class="bar-seg reprovado" style="width:${(reprov/total6)*100}%"></div>
+      <div class="bar-seg pendente" style="width:${(pend/total6)*100}%"></div>
+    ` : '';
+
+    document.getElementById('statusDot').className = 'status-dot';
+    document.getElementById('statusText').textContent = 'Dados atualizados em ' + new Date().toLocaleString('pt-BR');
+  }catch(err){
+    console.error(err);
+    document.getElementById('statusDot').className = 'status-dot warn';
+    document.getElementById('statusText').textContent = 'Não foi possível carregar todos os dados: ' + sgeMensagemErro(err);
+  }finally{
+    btn.classList.remove('spinning');
+  }
+}
+
+document.getElementById('btnRefresh').addEventListener('click', carregarDashboard);
+document.getElementById('limiteEstoque').addEventListener('change', carregarDashboard);
+
+(async function(){
+  await sgeRequireLogin();
+  await sgeMontarBarraUsuario();
+  carregarDashboard();
+})();
+</script>
+
+</body>
+</html>

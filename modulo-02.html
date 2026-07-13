@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGE · Módulo 02 — Estamparia</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+:root{
+  --navy-900:#0E1638;
+  --navy-800:#141F4D;
+  --navy-700:#1C2A5E;
+  --indigo-600:#5B4FE8;
+  --indigo-500:#6E63EE;
+  --indigo-50:#EEECFD;
+  --bg:#EEF1F8;
+  --card:#FFFFFF;
+  --border:#E1E4F0;
+  --text:#161A3B;
+  --text-muted:#6A6F94;
+  --danger:#DC3630;
+  --danger-50:#FCEAE9;
+  --amber:#B8860B;
+  --ok:#1C9A6C;
+  --ok-50:#E7F7F1;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(20,25,70,.04), 0 8px 24px -12px rgba(20,25,70,.12);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* ---------- Header ---------- */
+.topbar{
+  background:linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 1.5px),
+    linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-size: 14px 14px, auto;
+  color:#fff;
+  padding:16px 28px;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  flex-wrap:wrap;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.brand{display:flex;align-items:center;gap:10px;font-family:'Sora',sans-serif;font-weight:700;font-size:19px;letter-spacing:.02em;}
+.brand-mark{
+  width:36px;height:36px;border:1.5px solid rgba(255,255,255,.75);border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+}
+.topbar-title{
+  font-family:'Sora',sans-serif;font-weight:700;font-size:20px;
+  flex:1;text-align:center;min-width:160px;
+}
+.ref-box{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:10px;
+  padding:8px 16px;
+  min-width:190px;
+}
+.ref-box label{
+  display:block;font-size:10.5px;letter-spacing:.14em;font-weight:700;
+  color:rgba(255,255,255,.55);text-transform:uppercase;margin-bottom:3px;
+}
+.ref-box input{
+  background:transparent;border:none;outline:none;color:#fff;
+  font-family:'JetBrains Mono',monospace;font-weight:700;font-size:19px;
+  width:100%;padding:0;
+}
+.ref-box input::placeholder{color:rgba(255,255,255,.35);}
+.ref-actions{display:flex;gap:6px;margin-top:6px;}
+.ref-actions button{
+  background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;
+  font-family:'Inter',sans-serif;font-weight:600;cursor:pointer;padding:2px 0;
+}
+.ref-actions button:hover{color:#fff;text-decoration:underline;}
+.home-link{
+  display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);
+  text-decoration:none;font-weight:600;font-size:14px;white-space:nowrap;
+}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1560px;margin:0 auto;padding:26px 24px 60px;}
+
+.row-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;flex-wrap:wrap;}
+.row-toolbar-title{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;color:var(--navy-900);letter-spacing:.03em;text-transform:uppercase;}
+.row-toolbar-sub{color:var(--text-muted);font-size:12.5px;font-weight:500;margin-top:2px;}
+.btn-add-estampa{
+  display:inline-flex;align-items:center;gap:9px;background:var(--indigo-600);color:#fff;border:none;
+  border-radius:10px;padding:10px 16px;font-weight:700;font-size:13.5px;cursor:pointer;
+  box-shadow:0 6px 16px -6px rgba(91,79,232,.5);
+}
+.btn-add-estampa:hover{background:#4C41D6;}
+.btn-add-estampa svg{width:15px;height:15px;}
+
+.cards-row{display:grid;grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));gap:22px;align-items:start;}
+.cards-row>.card{width:100%;margin:0;}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:22px 22px 24px;
+}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:18px;}
+.card-title{font-family:'Sora',sans-serif;font-weight:700;font-size:16px;letter-spacing:.03em;color:var(--navy-900);}
+.card-title-input{
+  font-family:'Sora',sans-serif;font-weight:700;font-size:16px;letter-spacing:.03em;color:var(--navy-900);
+  border:1px solid transparent;background:transparent;outline:none;width:100%;
+  padding:3px 6px;margin:-3px -6px -3px -7px;border-radius:7px;text-transform:uppercase;
+}
+.card-title-input::placeholder{color:var(--navy-900);opacity:1;}
+.card-title-input:hover{background:var(--indigo-50);}
+.card-title-input:focus{background:#fff;border-color:var(--indigo-500);box-shadow:0 0 0 3px var(--indigo-50);}
+.card-sub{color:var(--text-muted);font-size:12.5px;margin-top:2px;}
+.icon-btn{
+  width:34px;height:34px;border-radius:9px;border:1.5px solid var(--border);
+  background:#fff;color:var(--indigo-600);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:.15s;
+}
+.icon-btn:hover{background:var(--indigo-50);border-color:var(--indigo-500);}
+.icon-btn svg{width:17px;height:17px;}
+
+
+.mini-del{
+  background:var(--danger-50);color:var(--danger);border:none;border-radius:7px;
+  width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.mini-del svg{width:13px;height:13px;}
+
+/* dropzone */
+.dropzone{
+  border:1.5px dashed #C7CBE6;
+  border-radius:12px;
+  min-height:220px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  background:#F8F9FD;
+  cursor:pointer;
+  padding:20px;
+  text-align:center;
+  transition:.15s;
+  position:relative;
+}
+.dropzone.drag{background:var(--indigo-50);border-color:var(--indigo-500);}
+.dropzone svg{width:42px;height:42px;color:var(--indigo-500);}
+.dropzone p{margin:0;color:var(--text-muted);font-size:13.5px;line-height:1.5;}
+.btn-outline{
+  border:1.5px solid var(--indigo-500);color:var(--indigo-600);background:#fff;
+  padding:9px 18px;border-radius:9px;font-weight:600;font-size:13.5px;cursor:pointer;
+}
+.btn-outline:hover{background:var(--indigo-50);}
+
+.image-preview{
+  position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border);
+  background:#F1F2F4;min-height:150px;
+}
+.image-preview img{width:100%;display:block;max-height:280px;object-fit:contain;background:#fff;}
+.zoom-btn{
+  position:absolute;top:10px;right:10px;background:rgba(14,22,56,.72);color:#fff;
+  border:none;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  backdrop-filter:blur(2px);
+}
+.zoom-btn svg{width:16px;height:16px;}
+.img-actions{display:flex;justify-content:center;gap:22px;margin-top:12px;}
+.img-actions button{
+  background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:5px;
+  cursor:pointer;color:var(--text-muted);font-size:11.5px;font-weight:600;
+}
+.circle-icon{
+  width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.circle-icon.edit{background:var(--indigo-600);}
+.circle-icon.del{background:var(--danger);}
+.circle-icon svg{width:15px;height:15px;}
+
+.timestamp-pill{
+  display:inline-flex;align-items:center;gap:6px;margin-top:10px;
+  background:var(--ok-50);color:var(--ok);border:1px solid #CDEEE0;
+  padding:5px 11px;border-radius:100px;font-size:11.5px;font-weight:600;
+}
+.timestamp-pill svg{width:12px;height:12px;}
+
+.radio-row{display:flex;gap:24px;margin-top:14px;}
+.radio-opt{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text);}
+.radio-opt input{accent-color:var(--indigo-600);width:16px;height:16px;}
+
+.field{margin-top:16px;}
+.field label{display:block;font-weight:700;font-size:13.5px;color:var(--navy-900);margin-bottom:7px;}
+.field input[type=text], .field textarea{
+  width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;
+  font-family:'Inter',sans-serif;font-size:13.5px;color:var(--text);background:#fff;
+  outline:none;transition:.15s;
+}
+.field input[type=text]:focus, .field textarea:focus{border-color:var(--indigo-500);box-shadow:0 0 0 3px var(--indigo-50);}
+.field select{
+  width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;
+  font-family:'Inter',sans-serif;font-size:13.5px;color:var(--text);background:#fff;
+  outline:none;transition:.15s;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236A6F94' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:16px;padding-right:36px;
+}
+.field select:focus{border-color:var(--indigo-500);box-shadow:0 0 0 3px var(--indigo-50);}
+
+.pantone-legend{font-size:11px;color:var(--text-muted);margin:-2px 0 8px;}
+
+.pantone-list{margin-top:16px;}
+.pantone-list>label{display:block;font-weight:700;font-size:13.5px;color:var(--navy-900);margin-bottom:9px;}
+.pantone-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.seq-badge{
+  width:22px;height:22px;border-radius:6px;background:var(--navy-900);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;
+}
+.swatch{
+  width:38px;height:38px;border-radius:8px;border:1px solid var(--border);flex-shrink:0;padding:0;cursor:pointer;
+}
+.pantone-row input[type=text]{
+  flex:1;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13.5px;
+  font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--text); outline:none;
+}
+.pantone-row input[type=text]:focus{border-color:var(--indigo-500);box-shadow:0 0 0 3px var(--indigo-50);}
+.pantone-row .ink-code, .pantone-row .fabric-code{
+  width:46px;flex:none;text-align:center;
+}
+.pantone-row .rm-pantone{
+  background:none;border:none;color:var(--text-muted);cursor:pointer;flex-shrink:0;width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;border-radius:7px;
+}
+.pantone-row .rm-pantone:hover{background:var(--danger-50);color:var(--danger);}
+.pantone-row .rm-pantone svg{width:14px;height:14px;}
+
+.add-pantone-btn{
+  display:inline-flex;align-items:center;gap:8px;background:none;border:none;color:var(--indigo-600);
+  font-weight:700;font-size:13.5px;cursor:pointer;padding:8px 0 0;
+}
+.add-pantone-btn .plus-circ{
+  width:22px;height:22px;border-radius:50%;background:var(--indigo-600);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+}
+.add-pantone-btn .plus-circ svg{width:12px;height:12px;}
+
+.add-estampa-btn{
+  display:flex;align-items:center;gap:8px;justify-content:center;width:100%;
+  border:1.5px dashed var(--indigo-400,#B8B2F5);color:var(--indigo-600);background:var(--indigo-50);
+  padding:11px;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer;margin-top:6px;
+}
+.add-estampa-btn:hover{background:#E2DFFC;}
+
+.obs-card{margin-top:22px;}
+.obs-card textarea{min-height:100px;resize:vertical;}
+
+.recent-block{margin-top:22px;padding-top:20px;border-top:1px solid var(--border);}
+.recent-block-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.recent-block-head label{font-weight:700;font-size:13.5px;color:var(--navy-900);}
+.recent-block-head span{font-size:11.5px;color:var(--text-muted);}
+.recent-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;}
+.recent-item{
+  border:1px solid var(--border);border-radius:11px;padding:12px 14px;background:#FBFBFE;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.recent-item-ref{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14.5px;color:var(--navy-900);}
+.recent-item-meta{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.recent-item-open{
+  background:var(--indigo-50);color:var(--indigo-600);border:none;border-radius:8px;
+  padding:7px 12px;font-weight:700;font-size:12px;cursor:pointer;flex-shrink:0;
+}
+.recent-item-open:hover{background:#E2DFFC;}
+.recent-empty{color:var(--text-muted);font-size:12.5px;font-style:italic;}
+
+/* ---------- Search ---------- */
+.search-trigger{
+  display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+  color:#fff;border-radius:10px;padding:9px 14px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;
+}
+.search-trigger:hover{background:rgba(255,255,255,.16);}
+.search-trigger svg{width:15px;height:15px;}
+
+.search-overlay{
+  position:fixed;inset:0;background:rgba(9,13,32,.55);display:none;align-items:flex-start;justify-content:center;
+  z-index:900;padding:6vh 20px;overflow-y:auto;
+}
+.search-overlay.open{display:flex;}
+.search-modal{
+  background:#fff;border-radius:16px;max-width:820px;width:100%;box-shadow:0 24px 60px -20px rgba(9,13,32,.4);
+  overflow:hidden;
+}
+.search-modal-head{
+  background:linear-gradient(180deg,var(--navy-800),var(--navy-900));color:#fff;padding:20px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.search-modal-head h3{margin:0;font-size:16px;}
+.search-modal-head p{margin:3px 0 0;font-size:12px;color:rgba(255,255,255,.6);}
+.search-modal-close{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;}
+.search-modal-body{padding:22px 24px;}
+.search-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:16px;}
+.search-actions{display:flex;justify-content:flex-end;gap:10px;margin-bottom:18px;}
+.search-results{border-top:1px solid var(--border);padding-top:14px;max-height:38vh;overflow-y:auto;}
+.search-result-item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border);
+}
+.search-result-item:last-child{border-bottom:none;}
+.search-result-main{min-width:0;}
+.search-result-ref{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--navy-900);}
+.search-result-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;}
+.tag-chip{background:var(--indigo-50);color:var(--indigo-600);font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:100px;}
+.search-result-meta{font-size:11.5px;color:var(--text-muted);margin-top:3px;}
+.search-empty-state{color:var(--text-muted);font-size:13px;text-align:center;padding:30px 10px;}
+.search-loading{color:var(--text-muted);font-size:13px;text-align:center;padding:20px 10px;}
+
+.bottom-bar{display:flex;justify-content:flex-end;gap:12px;margin-top:24px;flex-wrap:wrap;}
+.btn-primary{
+  background:var(--indigo-600);color:#fff;border:none;border-radius:10px;
+  padding:12px 22px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:9px;cursor:pointer;
+  box-shadow:0 6px 16px -6px rgba(91,79,232,.55);
+}
+.btn-primary:hover{background:#4C41D6;}
+.btn-primary svg{width:17px;height:17px;}
+.btn-secondary{
+  background:#fff;color:var(--navy-900);border:1.5px solid var(--border);border-radius:10px;
+  padding:12px 20px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:9px;cursor:pointer;
+}
+.btn-secondary:hover{border-color:var(--indigo-500);color:var(--indigo-600);}
+.btn-secondary svg{width:17px;height:17px;}
+.save-toast{
+  position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--navy-900);color:#fff;padding:11px 20px;border-radius:10px;font-size:13.5px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.25s;display:flex;align-items:center;gap:9px;z-index:500;
+}
+.save-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.save-toast svg{width:15px;height:15px;color:var(--ok);}
+
+/* ---------- Lightbox ---------- */
+.lightbox{
+  position:fixed;inset:0;background:rgba(9,13,32,.92);display:none;align-items:center;justify-content:center;
+  z-index:1000;flex-direction:column;
+}
+.lightbox.open{display:flex;}
+.lightbox-stage{overflow:hidden;flex:1;width:100%;display:flex;align-items:center;justify-content:center;cursor:grab;}
+.lightbox-stage.grabbing{cursor:grabbing;}
+.lightbox-stage img{max-width:92vw;max-height:80vh;user-select:none;transition:transform .05s linear;}
+.lightbox-bar{
+  display:flex;align-items:center;gap:14px;padding:16px;color:#fff;
+}
+.lightbox-bar button{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;
+  width:38px;height:38px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.lightbox-bar button:hover{background:rgba(255,255,255,.2);}
+.lightbox-bar button svg{width:17px;height:17px;}
+.lightbox-close{
+  position:absolute;top:18px;right:22px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);
+  color:#fff;width:38px;height:38px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.lightbox-hint{color:rgba(255,255,255,.55);font-size:12px;}
+
+/* ---------- Print view ---------- */
+.print-area{display:none;}
+@media print{
+  html, body{margin:0;padding:0;background:#fff;height:auto;}
+  .topbar, .wrap, .save-toast, .lightbox, .search-overlay{display:none !important;}
+  .print-area{display:block;width:100%;}
+  @page{size:A4;margin:12mm;}
+}
+.pv-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #0E1638;padding-bottom:10px;margin-bottom:16px;}
+.pv-header .pv-brand{font-family:'Sora',sans-serif;font-weight:800;font-size:15px;color:#0E1638;letter-spacing:.06em;}
+.pv-ref{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:28px;color:#0E1638;}
+.pv-ref-label{font-size:10.5px;letter-spacing:.14em;color:#6A6F94;font-weight:700;text-transform:uppercase;}
+.pv-meta{font-size:11px;color:#6A6F94;}
+.pv-section-title{
+  font-family:'Sora',sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;
+  color:#0E1638;border-left:5px solid #5B4FE8;padding-left:9px;margin:16px 0 10px;
+}
+.pv-featured{border:2px solid #0E1638;border-radius:10px;padding:12px;margin-bottom:12px;page-break-inside:avoid;}
+.pv-featured img{width:100%;max-height:300px;object-fit:contain;display:block;margin:0 auto 8px;}
+.pv-desc{font-size:11.5px;color:#333;margin-bottom:4px;}
+.pv-tagless{border:1.5px solid #d8dae8;border-radius:10px;padding:12px;page-break-inside:avoid;}
+.pv-tagless img{width:100%;max-height:200px;object-fit:contain;display:block;margin:0 auto 8px;}
+.pv-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11px;}
+.pv-table th{
+  text-align:left;background:#EEF1F8;color:#0E1638;padding:5px 8px;font-size:9.5px;
+  text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #0E1638;
+}
+.pv-table td{padding:5px 8px;border-bottom:1px solid #E1E4F0;vertical-align:middle;}
+.pv-table-mini th:first-child, .pv-table-mini td:first-child{width:28px;}
+.pv-swatch{width:16px;height:16px;border-radius:4px;border:1px solid #ccc;display:inline-block;vertical-align:middle;}
+.pv-obs{margin-top:14px;font-size:11.5px;color:#333;border-top:1px dashed #ccc;padding-top:8px;}
+
+
+/* ---------- Módulo 02: Pedido / Ordens de Produção ---------- */
+.pedido-card .field{margin-top:14px;}
+.pedido-card .field:first-child{margin-top:0;}
+.op-section-label{font-weight:700;font-size:13.5px;color:var(--navy-900);margin:18px 0 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.op-rows{display:flex;flex-direction:column;gap:8px;}
+.op-row2{display:grid;grid-template-columns:36px 1fr 130px 40px;gap:10px;align-items:center;background:#F8F9FD;border:1px solid var(--border);border-radius:10px;padding:8px 10px;}
+.op-row2 .seq-badge{width:26px;height:26px;border-radius:8px;background:var(--navy-900);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.op-row2 input{border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:600;outline:none;background:#fff;}
+.op-row2 input:focus{border-color:var(--indigo-500);box-shadow:0 0 0 3px var(--indigo-50);}
+.op-row2 .rm-op{background:none;border:none;color:var(--danger);cursor:pointer;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:7px;}
+.op-row2 .rm-op:hover{background:var(--danger-50);}
+.op-row2 .rm-op svg{width:15px;height:15px;}
+.op-empty2{font-size:12.5px;color:var(--text-muted);border:1.5px dashed var(--border);border-radius:10px;padding:14px;text-align:center;}
+.op-total{margin-top:10px;font-size:12.5px;color:var(--text-muted);font-weight:600;}
+.op-total b{color:var(--navy-900);font-family:'JetBrains Mono',monospace;}
+
+.ref-status{
+  display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;
+  padding:6px 12px;border-radius:100px;margin-top:2px;
+}
+.ref-status.found{background:var(--ok-50);color:var(--ok);border:1px solid #CDEEE0;}
+.ref-status.notfound{background:var(--danger-50);color:var(--danger);border:1px solid #F6D3D1;}
+.ref-status.empty{background:#F1F2F8;color:var(--text-muted);border:1px solid var(--border);}
+.ref-status svg{width:13px;height:13px;}
+
+.readonly-card{position:relative;}
+.readonly-badge{
+  position:absolute;top:18px;right:18px;background:var(--indigo-50);color:var(--indigo-600);
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  padding:4px 9px;border-radius:100px;
+}
+.ro-field{margin-top:14px;}
+.ro-field label{display:block;font-weight:700;font-size:12.5px;color:var(--navy-900);margin-bottom:5px;}
+.ro-field .ro-value{font-size:13.5px;color:var(--text);background:#F8F9FD;border:1px solid var(--border);border-radius:9px;padding:9px 12px;min-height:38px;display:flex;align-items:center;}
+.ro-value.empty{color:var(--text-muted);font-style:italic;}
+.ro-pantone-swatch{width:14px;height:14px;border-radius:4px;border:1px solid #ccc;display:inline-block;vertical-align:middle;margin-right:6px;}
+
+.empty-ficha-state{
+  border:1.5px dashed var(--border);border-radius:12px;padding:36px 20px;text-align:center;
+  color:var(--text-muted);font-size:13.5px;grid-column:1/-1;
+}
+.empty-ficha-state svg{width:38px;height:38px;color:#C7CBE6;margin-bottom:10px;}
+.empty-ficha-state a{color:var(--indigo-600);font-weight:700;text-decoration:none;}
+.empty-ficha-state a:hover{text-decoration:underline;}
+
+.hidden-file-input{display:none;}
+
+/* ---------- Status do pedido / lista com filtro ---------- */
+.status-badge{
+  display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;
+  padding:5px 11px;border-radius:100px;white-space:nowrap;
+}
+.status-badge.pendente{background:#FBF1E1;color:#B4780B;border:1px solid #F0DDB0;}
+.status-badge.concluida{background:var(--ok-50);color:var(--ok);border:1px solid #CDEEE0;}
+.status-badge svg{width:12px;height:12px;}
+.status-toggle{
+  background:none;border:1.5px solid var(--border);color:var(--text-muted);border-radius:8px;
+  padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;
+}
+.status-toggle:hover{border-color:var(--indigo-500);color:var(--indigo-600);}
+
+.filter-tabs{display:flex;gap:6px;}
+.filter-tab{
+  background:#fff;border:1.5px solid var(--border);color:var(--text-muted);border-radius:9px;
+  padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;
+}
+.filter-tab.active{background:var(--indigo-600);color:#fff;border-color:var(--indigo-600);}
+.filter-tab .count{opacity:.75;margin-left:5px;}
+
+.pedidos-table-wrap{margin-top:14px;overflow-x:auto;}
+.pedidos-table{width:100%;border-collapse:collapse;}
+.pedidos-table th{
+  text-align:left;padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--navy-900);background:#F8F9FD;border-bottom:1.5px solid var(--border);
+}
+.pedidos-table td{padding:11px 12px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.pedidos-table tr:hover td{background:#FBFBFE;}
+.pedidos-table .ref-cell{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--navy-900);}
+.pedidos-table .ops-cell{font-size:11.5px;color:var(--text-muted);}
+.pedidos-empty-row td{padding:26px;text-align:center;color:var(--text-muted);font-size:13px;}
+.table-open-btn{
+  background:var(--indigo-50);color:var(--indigo-600);border:none;border-radius:8px;
+  padding:6px 12px;font-weight:700;font-size:12px;cursor:pointer;
+}
+.table-open-btn:hover{background:#E2DFFC;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="brand-mark">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 11-14h-7l1-6z"/></svg>
+    </span>
+    SGE
+  </div>
+  <div class="topbar-title">Módulo · 02 — Estamparia</div>
+  <div class="ref-box">
+    <label for="refInput">Referência (Módulo 01)</label>
+    <input id="refInput" type="text" class="mono" placeholder="00000" maxlength="20">
+    <div class="ref-actions">
+      <button id="btnLoadRef" type="button">Carregar</button>
+      <button id="btnNewRef" type="button">Novo pedido</button>
+    </div>
+  </div>
+  <button class="search-trigger" id="btnOpenSearch" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    Busca avançada
+  </button>
+  <a class="home-link" href="modulo-00.html">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+    Início
+  </a>
+</div>
+
+<div class="wrap">
+
+  <div class="row-toolbar">
+    <div>
+      <div class="row-toolbar-title">Dados do Pedido</div>
+      <div class="row-toolbar-sub">Referência, pedido e ordens de produção deste serviço de estamparia</div>
+    </div>
+    <div id="refStatusBox"><span class="ref-status empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Informe uma referência acima</span></div>
+  </div>
+
+  <div class="cards-row" style="grid-template-columns:1fr 1.4fr;">
+    <div class="card pedido-card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Pedido</div>
+          <div class="card-sub">Um pedido pode conter várias ordens de produção</div>
+        </div>
+        <div id="statusBadgeBox"></div>
+      </div>
+      <div class="field" style="margin-top:0;">
+        <label>Número do Pedido</label>
+        <input type="text" id="pedidoInput" class="mono" placeholder="Ex: PD-4321">
+      </div>
+
+      <div class="op-section-label">
+        Ordens de Produção
+        <button class="add-pantone-btn" id="btnAddOp" type="button" style="margin:0;">
+          <span class="plus-circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></span>
+          Adicionar OP
+        </button>
+      </div>
+      <div class="op-rows" id="opRows"></div>
+      <div class="op-total" id="opTotal"></div>
+    </div>
+
+    <div class="card obs-card" style="margin-top:0;">
+      <div class="field" style="margin-top:0;">
+        <label>Observações de Produção</label>
+        <textarea id="observacoesPedido" placeholder="Notas específicas para a estamparia deste pedido..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="row-toolbar" style="margin-top:28px;">
+    <div>
+      <div class="row-toolbar-title">Pedidos Cadastrados</div>
+      <div class="row-toolbar-sub">Disponível também para o Módulo 03 · Laboratório de Tinta, na Receita</div>
+    </div>
+    <div class="filter-tabs" id="filterTabs">
+      <button class="filter-tab active" data-filter="todos" type="button">Todos <span class="count" id="countTodos"></span></button>
+      <button class="filter-tab" data-filter="pendente" type="button">Pendentes <span class="count" id="countPendente"></span></button>
+      <button class="filter-tab" data-filter="concluida" type="button">Concluídas <span class="count" id="countConcluida"></span></button>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;">
+    <div class="pedidos-table-wrap">
+      <table class="pedidos-table">
+        <thead>
+          <tr><th>Pedido</th><th>Referência</th><th>Ordens de Produção</th><th>Qtd. Total</th><th>Status</th><th>Salvo em</th><th></th></tr>
+        </thead>
+        <tbody id="pedidosTableBody">
+          <tr class="pedidos-empty-row"><td colspan="7">Nenhum pedido salvo ainda.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row-toolbar" style="margin-top:28px;">
+    <div>
+      <div class="row-toolbar-title">Estampas &amp; Tagless</div>
+      <div class="row-toolbar-sub">Dados puxados do Módulo 01 pela referência — somente leitura</div>
+    </div>
+  </div>
+
+  <div class="cards-row" id="fichaPreviewRow">
+    <div class="empty-ficha-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><br>
+      Informe uma referência e clique em <b>Carregar</b> para trazer as estampas e o tagless salvos no Módulo 01.
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn-secondary" id="btnPrint" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Imprimir
+    </button>
+    <button class="btn-primary" id="btnSave" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+      Salvar Pedido
+    </button>
+  </div>
+</div>
+
+<div class="save-toast" id="saveToast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
+  <span id="saveToastText">Pedido salvo com sucesso</span>
+</div>
+
+<!-- Busca avançada -->
+<div class="search-overlay" id="searchOverlay">
+  <div class="search-modal">
+    <div class="search-modal-head">
+      <div>
+        <h3>Busca avançada</h3>
+        <p>Encontre pedidos salvos por referência, pedido ou número de OP</p>
+      </div>
+      <button class="search-modal-close" id="searchClose" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="search-modal-body">
+      <div class="search-grid">
+        <div class="field" style="margin-top:0;">
+          <label>Referência</label>
+          <input type="text" id="searchRef" placeholder="Ex: 29001">
+        </div>
+        <div class="field" style="margin-top:0;">
+          <label>Pedido</label>
+          <input type="text" id="searchPedido" placeholder="Ex: PD-4321">
+        </div>
+        <div class="field" style="margin-top:0;">
+          <label>Número da OP</label>
+          <input type="text" id="searchOp" placeholder="Ex: OP-5561">
+        </div>
+      </div>
+      <div class="search-actions">
+        <button class="btn-secondary" id="searchClear" type="button">Limpar</button>
+        <button class="btn-primary" id="searchGo" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Buscar
+        </button>
+      </div>
+      <div class="search-results" id="searchResults">
+        <div class="search-empty-state">Defina um ou mais filtros acima e clique em Buscar.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <div class="lightbox-stage" id="lightboxStage">
+    <img id="lightboxImg" src="" alt="Ampliação da estampa">
+  </div>
+  <div class="lightbox-bar">
+    <button id="lbZoomOut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M8 11h6"/></svg></button>
+    <button id="lbReset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/></svg></button>
+    <button id="lbZoomIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg></button>
+    <span class="lightbox-hint">Use a roda do mouse ou os botões para ampliar · arraste para mover</span>
+  </div>
+</div>
+
+<!-- Print-only view -->
+<div class="print-area" id="printArea"></div>
+
+<script>
+/* ---------- Banco do navegador (fallback) ----------
+   Quando os módulos rodam como Artifact no Claude, window.storage já existe
+   e é fornecido pela plataforma. Quando o arquivo é aberto sozinho no navegador
+   (fora do Claude), window.storage não existe e as chamadas de salvar geravam erro.
+   Este bloco cria um substituto com a MESMA interface, usando localStorage do
+   navegador, para que os módulos funcionem nos dois cenários sem alterar o
+   restante do código. */
+(function(){
+  if (window.storage && typeof window.storage.get === 'function') return;
+
+  var NS = 'sge_db::';
+  function scopeBase(shared){ return NS + (shared ? 'shared::' : 'user::'); }
+  function fullKey(key, shared){ return scopeBase(shared) + key; }
+
+  // Alguns navegadores bloqueiam até o localStorage para arquivos abertos
+  // localmente (protocolo file://, comum ao baixar e abrir com duplo clique).
+  // Por isso testamos se o localStorage está realmente utilizável antes de
+  // depender dele; se não estiver, caímos para um banco em memória (a sessão
+  // funciona normalmente, mas os dados não sobrevivem a um recarregamento).
+  var localStorageOk = false;
+  try{
+    var testKey = '__sge_storage_test__';
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+    localStorageOk = true;
+  }catch(e){
+    localStorageOk = false;
+  }
+
+  if (localStorageOk){
+    console.warn('[SGE] window.storage não disponível — usando localStorage do navegador como banco de dados local.');
+    window.storage = {
+      get: function(key, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            var raw = localStorage.getItem(fullKey(key, shared));
+            if (raw === null){ reject(new Error('Chave não encontrada: ' + key)); return; }
+            resolve({ key: key, value: raw, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      set: function(key, value, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            localStorage.setItem(fullKey(key, shared), value);
+            resolve({ key: key, value: value, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      delete: function(key, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            var existed = localStorage.getItem(fullKey(key, shared)) !== null;
+            localStorage.removeItem(fullKey(key, shared));
+            resolve({ key: key, deleted: existed, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      list: function(prefix, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            prefix = prefix || '';
+            var base = scopeBase(shared);
+            var fullPrefix = base + prefix;
+            var keys = [];
+            for(var i=0;i<localStorage.length;i++){
+              var lk = localStorage.key(i);
+              if(lk && lk.indexOf(fullPrefix) === 0){
+                keys.push(lk.slice(base.length));
+              }
+            }
+            resolve({ keys: keys, prefix: prefix, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      }
+    };
+  } else {
+    console.warn('[SGE] window.storage e localStorage indisponíveis neste navegador (comum ao abrir o arquivo direto, via file://). Usando memória temporária: os dados NÃO serão salvos ao fechar ou recarregar a página.');
+    window.__sgeStorageIsMemoryOnly = true;
+    var memoryDb = {};
+    window.storage = {
+      get: function(key, shared){
+        return new Promise(function(resolve, reject){
+          var k = fullKey(key, shared);
+          if (!(k in memoryDb)){ reject(new Error('Chave não encontrada: ' + key)); return; }
+          resolve({ key: key, value: memoryDb[k], shared: !!shared });
+        });
+      },
+      set: function(key, value, shared){
+        return new Promise(function(resolve){
+          memoryDb[fullKey(key, shared)] = value;
+          resolve({ key: key, value: value, shared: !!shared });
+        });
+      },
+      delete: function(key, shared){
+        return new Promise(function(resolve){
+          var k = fullKey(key, shared);
+          var existed = k in memoryDb;
+          delete memoryDb[k];
+          resolve({ key: key, deleted: existed, shared: !!shared });
+        });
+      },
+      list: function(prefix, shared){
+        return new Promise(function(resolve){
+          prefix = prefix || '';
+          var base = scopeBase(shared);
+          var fullPrefix = base + prefix;
+          var keys = [];
+          Object.keys(memoryDb).forEach(function(k){
+            if (k.indexOf(fullPrefix) === 0) keys.push(k.slice(base.length));
+          });
+          resolve({ keys: keys, prefix: prefix, shared: !!shared });
+        });
+      }
+    };
+  }
+})();
+</script>
+<script>
+(function(){
+  function mostrarAvisoMemoria(){
+    if(!window.__sgeStorageIsMemoryOnly) return;
+    var bar = document.createElement('div');
+    bar.setAttribute('role','alert');
+    bar.style.cssText = 'position:sticky;top:0;z-index:9999;background:#FBF1E1;color:#8a5a06;border-bottom:1px solid #F0DDB0;padding:10px 16px;font:600 12.5px/1.4 Inter,system-ui,sans-serif;text-align:center;';
+    bar.innerHTML = '\u26A0\uFE0F Este navegador n\u00e3o permite salvar permanentemente para um arquivo aberto localmente (file://). Os dados desta sess\u00e3o ser\u00e3o perdidos ao fechar ou recarregar a p\u00e1gina. Para salvar de verdade, use aqui no Claude ou hospede os arquivos em um servidor local. <button type="button" id="sgeBannerFechar" style="margin-left:10px;background:none;border:1px solid #8a5a06;border-radius:6px;padding:2px 8px;cursor:pointer;color:#8a5a06;font-weight:700;">Entendi</button>';
+    document.body.prepend(bar);
+    document.getElementById('sgeBannerFechar').addEventListener('click', function(){ bar.remove(); });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', mostrarAvisoMemoria);
+  } else {
+    mostrarAvisoMemoria();
+  }
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+
+  const uid = () => 'id' + Math.random().toString(36).slice(2,10);
+  const nowIso = () => new Date().toISOString();
+  const fmtDateTime = (iso) => {
+    if(!iso) return '';
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2,'0');
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} às ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  function escapeHtml(str){
+    return String(str||'').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  }
+
+  const $ = sel => document.querySelector(sel);
+  const refInput = $('#refInput');
+  const pedidoInput = $('#pedidoInput');
+  const opRowsEl = $('#opRows');
+  const opTotalEl = $('#opTotal');
+  const refStatusBox = $('#refStatusBox');
+  const fichaPreviewRow = $('#fichaPreviewRow');
+  const observacoesPedido = $('#observacoesPedido');
+
+  function svgTrash(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+  }
+  function svgZoom(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg>';
+  }
+  function svgX(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  }
+  function svgCheck(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>';
+  }
+  function svgAlert(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>';
+  }
+
+  /* ---------------- Estado do pedido (Módulo 02) ---------------- */
+  function makeOrdem(){ return { id: uid(), numero:'', quantidade:'' }; }
+
+  let pedidoState = {
+    referencia: '',
+    pedido: '',
+    ordens: [ makeOrdem() ],
+    observacoes: '',
+    status: 'pendente' // 'pendente' | 'concluida'
+  };
+
+  // Ficha do Módulo 01 (somente leitura) associada à referência atual
+  let fichaAtual = null;
+  let fichaStatus = 'empty'; // 'empty' | 'found' | 'notfound'
+
+  /* ---------------- Status do pedido (Pendente/Concluída) ---------------- */
+  const statusBadgeBox = $('#statusBadgeBox');
+  function statusLabel(status){ return status === 'concluida' ? 'Concluída' : 'Pendente'; }
+  function renderStatusBadge(){
+    const status = pedidoState.status === 'concluida' ? 'concluida' : 'pendente';
+    const icon = status === 'concluida'
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m20 6-11 11L4 12"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
+    statusBadgeBox.innerHTML = `
+      <span class="status-badge ${status}">${icon}${statusLabel(status)}</span>
+      <button type="button" class="status-toggle" id="btnToggleStatus">Marcar como ${status==='concluida' ? 'pendente' : 'concluída'}</button>
+    `;
+    $('#btnToggleStatus').addEventListener('click', () => {
+      pedidoState.status = status === 'concluida' ? 'pendente' : 'concluida';
+      renderStatusBadge();
+    });
+  }
+
+  /* ---------------- Ordens de Produção ---------------- */
+  function renderOpRows(){
+    opRowsEl.innerHTML = '';
+    if(pedidoState.ordens.length === 0) pedidoState.ordens.push(makeOrdem());
+    pedidoState.ordens.forEach((ordem, i) => {
+      const row = document.createElement('div');
+      row.className = 'op-row2';
+      row.innerHTML = `
+        <span class="seq-badge">${i+1}</span>
+        <input type="text" class="mono op-numero" placeholder="Ex: OP-5561" value="${escapeHtml(ordem.numero)}">
+        <input type="number" min="0" step="1" class="mono op-qtd" placeholder="Quantidade" value="${escapeHtml(ordem.quantidade)}">
+        <button type="button" class="rm-op" title="Remover OP">${svgX()}</button>
+      `;
+      row.querySelector('.op-numero').addEventListener('input', e => { ordem.numero = e.target.value; });
+      row.querySelector('.op-qtd').addEventListener('input', e => { ordem.quantidade = e.target.value; renderOpTotal(); });
+      row.querySelector('.rm-op').addEventListener('click', () => {
+        pedidoState.ordens.splice(i,1);
+        renderOpRows();
+      });
+      opRowsEl.appendChild(row);
+    });
+    renderOpTotal();
+  }
+  function renderOpTotal(){
+    const total = pedidoState.ordens.reduce((sum, o) => sum + (parseFloat(o.quantidade) || 0), 0);
+    opTotalEl.innerHTML = `${pedidoState.ordens.length} ordem(ns) de produção · quantidade total: <b>${total}</b>`;
+  }
+  $('#btnAddOp').addEventListener('click', () => {
+    pedidoState.ordens.push(makeOrdem());
+    renderOpRows();
+  });
+
+  /* ---------------- Status da referência ---------------- */
+  function renderRefStatus(){
+    if(fichaStatus === 'found'){
+      refStatusBox.innerHTML = `<span class="ref-status found">${svgCheck()}Ficha encontrada no Módulo 01</span>`;
+    } else if(fichaStatus === 'notfound'){
+      refStatusBox.innerHTML = `<span class="ref-status notfound">${svgAlert()}Nenhuma ficha encontrada para esta referência</span>`;
+    } else {
+      refStatusBox.innerHTML = `<span class="ref-status empty">${svgAlert()}Informe uma referência acima</span>`;
+    }
+  }
+
+  /* ---------------- Preview somente leitura de Estampas & Tagless ---------------- */
+  function pantoneTable(pantones){
+    if(!pantones || pantones.length === 0){
+      return '<div class="ro-value empty">Nenhum pantone cadastrado</div>';
+    }
+    let rows = '';
+    pantones.forEach((p,i) => {
+      rows += `<tr><td>${i+1}</td><td><span class="ro-pantone-swatch" style="background:${escapeHtml(p.color||'#ccc')}"></span></td><td>${escapeHtml(p.code)||'—'}</td><td>${escapeHtml(p.ink)||'—'}</td><td>${escapeHtml(p.fabric)||'—'}</td></tr>`;
+    });
+    return `<table class="pv-table pv-table-mini"><thead><tr><th>#</th><th>Cor</th><th>Pantone</th><th>Cód. Tinta</th><th>Cód. Tecido</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function estampaCardHtml(estampa, idx, total){
+    const title = (estampa.name && estampa.name.trim()) ? estampa.name.trim() : (total>1 ? `Estampa Localizada ${idx+1}` : 'Estampa Localizada');
+    const imgHtml = estampa.image
+      ? `<div class="image-preview"><img src="${estampa.image}" alt="${escapeHtml(title)}"><button type="button" class="zoom-btn" data-img="${idx}" title="Ampliar">${svgZoom()}</button></div>${estampa.addedAt ? `<div class="timestamp-pill" style="margin-top:10px;">Adicionado em ${fmtDateTime(estampa.addedAt)}</div>` : ''}`
+      : `<div class="ro-value empty" style="min-height:150px;">Sem imagem cadastrada</div>`;
+    return `
+      <div class="card readonly-card" data-estampa-idx="${idx}">
+        <span class="readonly-badge">Módulo 01</span>
+        <div class="card-head"><div><div class="card-title">${escapeHtml(title)}</div><div class="card-sub">${total>1 ? `Estampa ${idx+1} de ${total}` : 'Estampa principal'}</div></div></div>
+        ${imgHtml}
+        <div class="ro-field"><label>Descrição</label><div class="ro-value ${estampa.description?'':'empty'}">${escapeHtml(estampa.description)||'Sem descrição'}</div></div>
+        <div class="ro-field"><label>Aplicação</label><div class="ro-value ${estampa.application?'':'empty'}">${escapeHtml(estampa.application)||'Nenhuma'}</div></div>
+        ${estampa.applicationDescription ? `<div class="ro-field"><label>Descrição da Aplicação</label><div class="ro-value">${escapeHtml(estampa.applicationDescription)}</div></div>` : ''}
+        <div class="ro-field"><label>Pantones</label>${pantoneTable(estampa.pantones)}</div>
+      </div>
+    `;
+  }
+
+  function taglessCardHtml(tagless){
+    const imgHtml = tagless.image
+      ? `<div class="image-preview"><img src="${tagless.image}" alt="Tagless gola"><button type="button" class="zoom-btn" data-img="tagless" title="Ampliar">${svgZoom()}</button></div>${tagless.addedAt ? `<div class="timestamp-pill" style="margin-top:10px;">Adicionado em ${fmtDateTime(tagless.addedAt)}</div>` : ''}`
+      : `<div class="ro-value empty" style="min-height:150px;">Sem imagem cadastrada</div>`;
+    return `
+      <div class="card readonly-card" data-tagless="1">
+        <span class="readonly-badge">Módulo 01</span>
+        <div class="card-head"><div><div class="card-title">TAGLESS GOLA</div><div class="card-sub">Etiqueta impressa internamente na gola</div></div></div>
+        ${imgHtml}
+        <div class="ro-field"><label>Técnica</label><div class="ro-value">${tagless.technique==='silk' ? 'Silk' : 'Tampografia'}</div></div>
+        <div class="ro-field"><label>Descrição</label><div class="ro-value ${tagless.description?'':'empty'}">${escapeHtml(tagless.description)||'Sem descrição'}</div></div>
+        <div class="ro-field"><label>Pantones</label>${pantoneTable(tagless.pantones)}</div>
+      </div>
+    `;
+  }
+
+  function renderFichaPreview(){
+    if(!fichaAtual){
+      fichaPreviewRow.innerHTML = `
+        <div class="empty-ficha-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><br>
+          ${fichaStatus === 'notfound'
+            ? `Nenhuma ficha encontrada no Módulo 01 para a referência <b>${escapeHtml(refInput.value.trim())}</b>. <a href="modulo-01.html?ref=${encodeURIComponent(refInput.value.trim())}" target="_blank">Cadastrar esta estampa no Módulo 01</a>`
+            : `Informe uma referência e clique em <b>Carregar</b> para trazer as estampas e o tagless salvos no Módulo 01.`}
+        </div>
+      `;
+      return;
+    }
+    const estampas = fichaAtual.estampas || [];
+    let html = estampas.map((e,i) => estampaCardHtml(e, i, estampas.length)).join('');
+    html += taglessCardHtml(fichaAtual.tagless || {});
+    fichaPreviewRow.innerHTML = html;
+    fichaPreviewRow.querySelectorAll('.zoom-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-img');
+        const src = key === 'tagless' ? (fichaAtual.tagless && fichaAtual.tagless.image) : (estampas[Number(key)] && estampas[Number(key)].image);
+        if(src) openLightbox(src);
+      });
+    });
+  }
+
+  /* ---------------- Carregar ficha do Módulo 01 pela referência ---------------- */
+  async function carregarFichaDoModulo01(ref){
+    if(!ref){ fichaAtual = null; fichaStatus = 'empty'; renderRefStatus(); renderFichaPreview(); return; }
+    try{
+      const result = await window.storage.get('ficha:' + ref);
+      fichaAtual = result ? JSON.parse(result.value) : null;
+      fichaStatus = fichaAtual ? 'found' : 'notfound';
+    }catch(err){
+      fichaAtual = null;
+      fichaStatus = 'notfound';
+    }
+    renderRefStatus();
+    renderFichaPreview();
+  }
+
+  refInput.addEventListener('change', () => carregarFichaDoModulo01(refInput.value.trim()));
+
+  /* ---------------- Hidratar UI a partir do pedidoState ---------------- */
+  function hydrateUI(){
+    refInput.value = pedidoState.referencia || '';
+    pedidoInput.value = pedidoState.pedido || '';
+    observacoesPedido.value = pedidoState.observacoes || '';
+    renderOpRows();
+    renderStatusBadge();
+  }
+
+  /* ---------------- Lightbox (reaproveitado do Módulo 01) ---------------- */
+  const lightbox = $('#lightbox'), lbImg = $('#lightboxImg'), lbStage = $('#lightboxStage');
+  let scale = 1, panX = 0, panY = 0, dragging = false, startX = 0, startY = 0;
+  function applyTransform(){ lbImg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; }
+  function openLightbox(src){
+    lbImg.src = src; scale = 1; panX = 0; panY = 0; applyTransform();
+    lightbox.classList.add('open');
+  }
+  function closeLightbox(){ lightbox.classList.remove('open'); }
+  $('#lightboxClose').addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e => { if(e.target === lightbox) closeLightbox(); });
+  $('#lbZoomIn').addEventListener('click', () => { scale = Math.min(5, scale + 0.5); applyTransform(); });
+  $('#lbZoomOut').addEventListener('click', () => { scale = Math.max(1, scale - 0.5); if(scale===1){panX=0;panY=0;} applyTransform(); });
+  $('#lbReset').addEventListener('click', () => { scale = 1; panX = 0; panY = 0; applyTransform(); });
+  lbStage.addEventListener('wheel', e => {
+    e.preventDefault();
+    scale = Math.min(5, Math.max(1, scale + (e.deltaY < 0 ? 0.25 : -0.25)));
+    if(scale === 1){ panX = 0; panY = 0; }
+    applyTransform();
+  }, { passive:false });
+  lbStage.addEventListener('mousedown', e => {
+    if(scale === 1) return;
+    dragging = true; startX = e.clientX - panX; startY = e.clientY - panY;
+    lbStage.classList.add('grabbing');
+  });
+  window.addEventListener('mousemove', e => {
+    if(!dragging) return;
+    panX = e.clientX - startX; panY = e.clientY - startY;
+    applyTransform();
+  });
+  window.addEventListener('mouseup', () => { dragging = false; lbStage.classList.remove('grabbing'); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeLightbox(); });
+
+  /* ---------------- Salvar / carregar pedido (persistente) ---------------- */
+  const toast = $('#saveToast'), toastText = $('#saveToastText');
+  function showToast(msg){
+    toastText.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  function coletarPedidoAtual(){
+    return {
+      referencia: refInput.value.trim(),
+      pedido: pedidoInput.value.trim(),
+      ordens: pedidoState.ordens
+        .map(o => ({ numero: (o.numero||'').trim(), quantidade: o.quantidade }))
+        .filter(o => o.numero || o.quantidade),
+      observacoes: observacoesPedido.value.trim(),
+      status: pedidoState.status === 'concluida' ? 'concluida' : 'pendente'
+    };
+  }
+
+  async function savePedido(){
+    const dados = coletarPedidoAtual();
+    if(!dados.referencia){ showToast('Informe uma referência antes de salvar'); return; }
+    if(!dados.pedido){ showToast('Informe o número do pedido antes de salvar'); return; }
+    if(dados.ordens.length === 0){ showToast('Adicione ao menos uma ordem de produção'); return; }
+    dados.savedAt = nowIso();
+    pedidoState = dados;
+    try{
+      await window.storage.set('pedido:' + dados.pedido, JSON.stringify(dados), false);
+      await window.storage.set('pedido_meta:' + dados.pedido, JSON.stringify({ referencia: dados.referencia, status: dados.status, savedAt: nowIso() }), false);
+      showToast('Pedido ' + dados.pedido + ' salvo com sucesso');
+      renderStatusBadge();
+      refreshPedidosTable();
+    }catch(err){
+      console.error(err);
+      showToast('Não foi possível salvar. Tente novamente.');
+    }
+  }
+
+  async function loadPedidoByNumero(pedido){
+    if(!pedido){ showToast('Informe um número de pedido para carregar'); return false; }
+    try{
+      const result = await window.storage.get('pedido:' + pedido);
+      if(!result){ showToast('Nenhum pedido encontrado para ' + pedido); return false; }
+      const loaded = JSON.parse(result.value);
+      pedidoState = Object.assign({ referencia:'', pedido:'', ordens:[makeOrdem()], observacoes:'', status:'pendente' }, loaded);
+      if(!pedidoState.ordens || pedidoState.ordens.length === 0) pedidoState.ordens = [makeOrdem()];
+      pedidoState.ordens = pedidoState.ordens.map(o => ({ id: uid(), numero:o.numero||'', quantidade:o.quantidade!==undefined?o.quantidade:'' }));
+      pedidoState.status = pedidoState.status === 'concluida' ? 'concluida' : 'pendente';
+      hydrateUI();
+      await carregarFichaDoModulo01(pedidoState.referencia);
+      showToast('Pedido ' + pedido + ' carregado');
+      return true;
+    }catch(err){
+      showToast('Nenhum pedido encontrado para ' + pedido);
+      return false;
+    }
+  }
+
+  $('#btnSave').addEventListener('click', savePedido);
+  $('#btnLoadRef').addEventListener('click', () => carregarFichaDoModulo01(refInput.value.trim()));
+  $('#btnNewRef').addEventListener('click', () => {
+    pedidoState = { referencia:'', pedido:'', ordens:[makeOrdem()], observacoes:'', status:'pendente' };
+    fichaAtual = null; fichaStatus = 'empty';
+    hydrateUI();
+    renderRefStatus();
+    renderFichaPreview();
+    showToast('Novo pedido em branco');
+  });
+
+  /* ---------------- Lista de pedidos cadastrados (com filtro de status) ---------------- */
+  const pedidosTableBody = $('#pedidosTableBody');
+  let pedidosCache = [];
+  let filtroAtual = 'todos';
+
+  async function refreshPedidosTable(){
+    try{
+      const listing = await window.storage.list('pedido:');
+      const keys = (listing && listing.keys) ? listing.keys.filter(k => !k.startsWith('pedido_meta:')) : [];
+      const items = [];
+      for(const key of keys){
+        try{
+          const r = await window.storage.get(key, false);
+          if(r) items.push(JSON.parse(r.value));
+        }catch(e){ /* ignora item corrompido */ }
+      }
+      items.sort((a,b) => (b.pedido||'').localeCompare(a.pedido||''));
+      pedidosCache = items;
+    }catch(err){
+      pedidosCache = [];
+    }
+    renderFilterCounts();
+    renderPedidosTable();
+  }
+
+  function renderFilterCounts(){
+    const total = pedidosCache.length;
+    const pendentes = pedidosCache.filter(p => p.status !== 'concluida').length;
+    const concluidas = pedidosCache.filter(p => p.status === 'concluida').length;
+    $('#countTodos').textContent = total ? `(${total})` : '';
+    $('#countPendente').textContent = pendentes ? `(${pendentes})` : '';
+    $('#countConcluida').textContent = concluidas ? `(${concluidas})` : '';
+  }
+
+  function renderPedidosTable(){
+    let items = pedidosCache;
+    if(filtroAtual === 'pendente') items = items.filter(p => p.status !== 'concluida');
+    if(filtroAtual === 'concluida') items = items.filter(p => p.status === 'concluida');
+
+    if(items.length === 0){
+      pedidosTableBody.innerHTML = '<tr class="pedidos-empty-row"><td colspan="7">Nenhum pedido encontrado para este filtro.</td></tr>';
+      return;
+    }
+    pedidosTableBody.innerHTML = items.map(p => {
+      const ops = p.ordens || [];
+      const opsTxt = ops.length ? ops.map(o => o.numero).filter(Boolean).join(', ') : '—';
+      const qtdTotal = ops.reduce((sum,o) => sum + (parseFloat(o.quantidade)||0), 0);
+      const status = p.status === 'concluida' ? 'concluida' : 'pendente';
+      const savedAtCell = p.savedAt ? fmtDateTime(p.savedAt) : '—';
+      return `
+        <tr>
+          <td class="ref-cell">${escapeHtml(p.pedido||'—')}</td>
+          <td class="ref-cell">${escapeHtml(p.referencia||'—')}</td>
+          <td class="ops-cell">${escapeHtml(opsTxt)}</td>
+          <td>${qtdTotal || '—'}</td>
+          <td><span class="status-badge ${status}">${statusLabel(status)}</span></td>
+          <td class="ops-cell">${savedAtCell}</td>
+          <td><button class="table-open-btn" type="button" data-pedido="${escapeHtml(p.pedido)}">Abrir</button></td>
+        </tr>
+      `;
+    }).join('');
+    pedidosTableBody.querySelectorAll('.table-open-btn').forEach(btn => {
+      btn.addEventListener('click', () => loadPedidoByNumero(btn.getAttribute('data-pedido')));
+    });
+  }
+
+  $('#filterTabs').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-tab');
+    if(!btn) return;
+    filtroAtual = btn.getAttribute('data-filter');
+    $('#filterTabs').querySelectorAll('.filter-tab').forEach(b => b.classList.toggle('active', b === btn));
+    renderPedidosTable();
+  });
+
+  refreshPedidosTable();
+
+  /* ---------------- Abrir já carregado via ?pedido=XXXX ou ?ref=XXXX ---------------- */
+  (function openFromQueryParam(){
+    try{
+      const params = new URLSearchParams(window.location.search);
+      const pedidoParam = (params.get('pedido') || '').trim();
+      const refParam = (params.get('ref') || '').trim();
+      if(pedidoParam){
+        loadPedidoByNumero(pedidoParam);
+      } else if(refParam){
+        refInput.value = refParam;
+        carregarFichaDoModulo01(refParam);
+      }
+    }catch(e){ /* ignora ambientes sem URLSearchParams */ }
+  })();
+
+  /* ---------------- Busca avançada ---------------- */
+  const searchOverlay = $('#searchOverlay');
+  function openSearch(){ searchOverlay.classList.add('open'); }
+  function closeSearch(){ searchOverlay.classList.remove('open'); }
+  $('#btnOpenSearch').addEventListener('click', openSearch);
+  $('#searchClose').addEventListener('click', closeSearch);
+  searchOverlay.addEventListener('click', e => { if(e.target === searchOverlay) closeSearch(); });
+
+  $('#searchClear').addEventListener('click', () => {
+    $('#searchRef').value = '';
+    $('#searchPedido').value = '';
+    $('#searchOp').value = '';
+    $('#searchResults').innerHTML = '<div class="search-empty-state">Defina um ou mais filtros acima e clique em Buscar.</div>';
+  });
+
+  function pedidoMatches(p, filters){
+    if(filters.ref && !(p.referencia || '').toLowerCase().includes(filters.ref)) return false;
+    if(filters.pedido && !(p.pedido || '').toLowerCase().includes(filters.pedido)) return false;
+    if(filters.op){
+      const hasOp = (p.ordens||[]).some(o => (o.numero||'').toLowerCase().includes(filters.op));
+      if(!hasOp) return false;
+    }
+    return true;
+  }
+
+  async function runSearch(){
+    const filters = {
+      ref: $('#searchRef').value.trim().toLowerCase(),
+      pedido: $('#searchPedido').value.trim().toLowerCase(),
+      op: $('#searchOp').value.trim().toLowerCase()
+    };
+    const resultsEl = $('#searchResults');
+    resultsEl.innerHTML = '<div class="search-loading">Buscando pedidos salvos...</div>';
+
+    try{
+      const listing = await window.storage.list('pedido:');
+      const keys = (listing && listing.keys) ? listing.keys.filter(k => !k.startsWith('pedido_meta:')) : [];
+      const matches = [];
+      for(const key of keys){
+        try{
+          const r = await window.storage.get(key, false);
+          if(!r) continue;
+          const p = JSON.parse(r.value);
+          if(pedidoMatches(p, filters)) matches.push(p);
+        }catch(e){ /* ignora item corrompido */ }
+      }
+      renderSearchResults(matches);
+    }catch(err){
+      resultsEl.innerHTML = '<div class="search-empty-state">Não foi possível buscar agora. Tente novamente.</div>';
+    }
+  }
+
+  function renderSearchResults(matches){
+    const resultsEl = $('#searchResults');
+    if(matches.length === 0){
+      resultsEl.innerHTML = '<div class="search-empty-state">Nenhum pedido encontrado com esses filtros.</div>';
+      return;
+    }
+    resultsEl.innerHTML = '';
+    matches.forEach(p => {
+      const ops = (p.ordens||[]).map(o => o.numero).filter(Boolean);
+      const item = document.createElement('div');
+      item.className = 'search-result-item';
+      item.innerHTML = `
+        <div class="search-result-main">
+          <div class="search-result-ref">${escapeHtml(p.pedido || '—')}</div>
+          <div class="search-result-meta">Ref. ${escapeHtml(p.referencia || '—')}</div>
+          <div class="search-result-tags">${ops.map(o => `<span class="tag-chip">${escapeHtml(o)}</span>`).join('')}</div>
+        </div>
+        <button class="recent-item-open" type="button">Abrir</button>
+      `;
+      item.querySelector('.recent-item-open').addEventListener('click', async () => {
+        const ok = await loadPedidoByNumero(p.pedido);
+        if(ok) closeSearch();
+      });
+      resultsEl.appendChild(item);
+    });
+  }
+
+  $('#searchGo').addEventListener('click', runSearch);
+
+  /* ---------------- Impressão ---------------- */
+  function pantoneMiniTable(pantones){
+    if(!pantones || pantones.length === 0) return '<p style="font-size:11px;color:#6A6F94;">Nenhum pantone cadastrado.</p>';
+    let rows = '';
+    pantones.forEach((p, i) => {
+      rows += `<tr><td>${i+1}</td><td><span class="pv-swatch" style="background:${p.color}"></span></td><td>${escapeHtml(p.code) || '—'}</td><td>${escapeHtml(p.ink) || '—'}</td><td>${escapeHtml(p.fabric) || '—'}</td></tr>`;
+    });
+    return `<table class="pv-table pv-table-mini"><thead><tr><th>#</th><th>Cor</th><th>Pantone</th><th>Cód. Tinta</th><th>Cód. Tecido</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function buildPrintView(){
+    const dados = coletarPedidoAtual();
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const dataStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    const opsRows = dados.ordens.length
+      ? dados.ordens.map(o => `<tr><td>${escapeHtml(o.numero)||'—'}</td><td>${escapeHtml(String(o.quantidade||'—'))}</td></tr>`).join('')
+      : '<tr><td colspan="2">Nenhuma OP cadastrada</td></tr>';
+
+    let estampasHtml = '';
+    if(fichaAtual && fichaAtual.estampas){
+      fichaAtual.estampas.forEach((e, idx) => {
+        estampasHtml += `
+          <div class="pv-featured">
+            ${e.image ? `<img src="${e.image}">` : ''}
+            <div class="pv-desc"><b>${escapeHtml(e.name || ('Estampa ' + (idx+1)))}</b></div>
+            <div class="pv-desc">Descrição: ${escapeHtml(e.description)||'—'}</div>
+            <div class="pv-desc">Aplicação: ${escapeHtml(e.application)||'Nenhuma'} ${e.applicationDescription ? '— ' + escapeHtml(e.applicationDescription) : ''}</div>
+            ${pantoneMiniTable(e.pantones)}
+          </div>`;
+      });
+    }
+    let taglessHtml = '';
+    if(fichaAtual && fichaAtual.tagless){
+      const t = fichaAtual.tagless;
+      taglessHtml = `
+        <div class="pv-tagless">
+          ${t.image ? `<img src="${t.image}">` : ''}
+          <div class="pv-desc">Técnica: ${t.technique==='silk'?'Silk':'Tampografia'}</div>
+          <div class="pv-desc">Descrição: ${escapeHtml(t.description)||'—'}</div>
+          ${pantoneMiniTable(t.pantones)}
+        </div>`;
+    }
+
+    return `
+      <div class="pv-header">
+        <div>
+          <div class="pv-brand">SGE — MÓDULO 02 · ESTAMPARIA</div>
+          <div class="pv-meta">Impresso em ${dataStr}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="pv-ref-label">Pedido</div>
+          <div class="pv-ref">${escapeHtml(dados.pedido || '—')}</div>
+        </div>
+      </div>
+      <div class="pv-meta" style="margin-bottom:6px;">Referência: <b>${escapeHtml(dados.referencia || '—')}</b></div>
+      <div class="pv-section-title">Ordens de Produção</div>
+      <table class="pv-table"><thead><tr><th>Número</th><th>Quantidade</th></tr></thead><tbody>${opsRows}</tbody></table>
+      <div class="pv-section-title">Estampas &amp; Tagless (Módulo 01)</div>
+      ${estampasHtml || '<p style="font-size:11.5px;color:#6A6F94;">Nenhuma ficha vinculada.</p>'}
+      ${taglessHtml}
+      ${dados.observacoes ? `<div class="pv-obs"><b>Observações de Produção:</b><br>${escapeHtml(dados.observacoes).replace(/\n/g,'<br>')}</div>` : ''}
+    `;
+  }
+
+  $('#btnPrint').addEventListener('click', () => {
+    $('#printArea').innerHTML = buildPrintView();
+    window.print();
+  });
+
+  /* ---------------- Inicialização ---------------- */
+  hydrateUI();
+  renderRefStatus();
+  renderFichaPreview();
+})();
+</script>
+</body>
+</html>

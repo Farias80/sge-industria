@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGE · Administração de Usuários</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+:root{
+  --navy-900:#0E1638;--navy-800:#141F4D;--indigo-600:#5B4FE8;--indigo-500:#6E63EE;--indigo-50:#EEECFD;
+  --bg:#EEF1F8;--card:#FFFFFF;--border:#E1E4F0;--text:#161A3B;--text-muted:#6A6F94;
+  --danger:#DC3630;--danger-50:#FCEAE9;--ok:#1C9A6C;--ok-50:#E7F7F1;
+  --radius:14px;--shadow:0 1px 2px rgba(20,25,70,.04), 0 8px 24px -12px rgba(20,25,70,.12);
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;}
+h1,h2,.font-display{font-family:'Sora',sans-serif;}
+.topbar{
+  background:linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-image:radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 1.5px), linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-size:14px 14px, auto;color:#fff;padding:22px 28px;display:flex;align-items:center;gap:14px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.back-btn{
+  display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;cursor:pointer;
+  text-decoration:none;
+}
+.back-btn svg{width:18px;height:18px;}
+.topbar h1{margin:0;font-weight:800;font-size:22px;}
+.topbar-sub{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
+main{padding:32px 24px 48px;display:flex;justify-content:center;}
+.wrap{max-width:960px;width:100%;}
+.notice{
+  background:var(--indigo-50);border:1px solid #D9D4FB;color:var(--navy-800);border-radius:12px;
+  padding:14px 16px;font-size:12.5px;line-height:1.5;margin-bottom:22px;
+}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{
+  text-align:left;font-family:'Sora',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--text-muted);padding:12px 16px;border-bottom:1px solid var(--border);background:#F7F8FC;
+}
+tbody td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+.papel-badge{
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;
+  text-transform:uppercase;letter-spacing:.03em;
+}
+.papel-badge.admin{background:var(--ok-50);color:var(--ok);}
+.papel-badge.usuario{background:#F1F2F8;color:var(--text-muted);}
+.setores{display:flex;gap:14px;flex-wrap:wrap;}
+.setor-toggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);}
+.setor-toggle input{width:15px;height:15px;accent-color:var(--indigo-600);cursor:pointer;}
+.empty{padding:40px;text-align:center;color:var(--text-muted);font-size:13px;}
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy-900);
+  color:#fff;padding:10px 18px;border-radius:9px;font-size:12.5px;opacity:0;transition:.2s ease;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.blocked{padding:60px 20px;text-align:center;color:var(--text-muted);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back-btn" href="modulo-00.html" title="Voltar ao menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+  </a>
+  <div>
+    <h1>Administração de Usuários</h1>
+    <div class="topbar-sub">Liberar edição por setor · apenas Administrador</div>
+  </div>
+</div>
+
+<main>
+  <div class="wrap" id="conteudo">
+    <div class="empty">Carregando…</div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script>
+const SETORES = [
+  { chave: 'arte', label: 'Artes' },
+  { chave: 'estamparia', label: 'Estamparia' },
+  { chave: 'laboratorio', label: 'Laboratório de Tinta' },
+  { chave: 'qualidade', label: 'Qualidade' }
+];
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+async function iniciar(){
+  await sgeRequireLogin();
+  await sgeMontarBarraUsuario();
+
+  const perfil = await sgeGetPerfil();
+  const conteudo = document.getElementById('conteudo');
+
+  if(!perfil || perfil.papel !== 'admin'){
+    conteudo.innerHTML = '<div class="blocked">Esta página é exclusiva do Administrador.<br>Fale com quem administra o sistema se precisar de mais acesso.</div>';
+    return;
+  }
+
+  const [{ data: usuarios, error: errUsuarios }, { data: permissoes, error: errPerm }] = await Promise.all([
+    window.sgeSupabase.from('perfis').select('*').order('nome'),
+    window.sgeSupabase.from('permissoes_setor').select('*')
+  ]);
+
+  if(errUsuarios){
+    conteudo.innerHTML = '<div class="empty">Não foi possível carregar os usuários: ' + sgeMensagemErro(errUsuarios) + '</div>';
+    return;
+  }
+
+  const permMap = {}; // usuario_id -> { setor: true/false }
+  (permissoes || []).forEach(p => {
+    permMap[p.usuario_id] = permMap[p.usuario_id] || {};
+    permMap[p.usuario_id][p.setor] = p.pode_editar;
+  });
+
+  conteudo.innerHTML = `
+    <div class="notice">
+      O Administrador sempre tem acesso total. Para os demais usuários, marque os setores em que a pessoa pode <b>editar e excluir</b> — a visualização e impressão já ficam liberadas para todos por padrão.
+      Novos usuários são criados em <b>Supabase → Authentication → Users</b>; assim que fizerem o primeiro login, aparecem automaticamente aqui como "usuário".
+    </div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Usuário</th><th>Papel</th><th>Setores liberados para edição</th></tr>
+        </thead>
+        <tbody id="tbodyUsuarios"></tbody>
+      </table>
+    </div>
+  `;
+
+  const tbody = document.getElementById('tbodyUsuarios');
+  if(!usuarios || !usuarios.length){
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">Nenhum usuário ainda.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = usuarios.map(u => `
+    <tr>
+      <td><b>${escapeHtml(u.nome)}</b></td>
+      <td><span class="papel-badge ${u.papel}">${u.papel === 'admin' ? 'Admin' : 'Usuário'}</span></td>
+      <td>
+        <div class="setores">
+          ${u.papel === 'admin' ? '<span style="font-size:12px;color:var(--text-muted);">Acesso total (Administrador)</span>' : SETORES.map(s => `
+            <label class="setor-toggle">
+              <input type="checkbox" data-uid="${u.id}" data-setor="${s.chave}" ${permMap[u.id] && permMap[u.id][s.chave] ? 'checked' : ''}>
+              ${s.label}
+            </label>
+          `).join('')}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  tbody.querySelectorAll('input[type=checkbox]').forEach(chk => {
+    chk.addEventListener('change', async (e) => {
+      const uid = e.target.getAttribute('data-uid');
+      const setor = e.target.getAttribute('data-setor');
+      const podeEditar = e.target.checked;
+      const perfilAtual = await sgeGetPerfil();
+      const { error } = await window.sgeSupabase.from('permissoes_setor').upsert({
+        usuario_id: uid,
+        setor: setor,
+        pode_editar: podeEditar,
+        liberado_por: perfilAtual.id,
+        liberado_em: new Date().toISOString()
+      }, { onConflict: 'usuario_id,setor' });
+      if(error){
+        toast('Erro: ' + sgeMensagemErro(error));
+        e.target.checked = !podeEditar;
+        return;
+      }
+      toast(podeEditar ? 'Permissão liberada' : 'Permissão revogada');
+    });
+  });
+}
+
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+iniciar();
+</script>
+
+</body>
+</html>

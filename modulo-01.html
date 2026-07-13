@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGE · Módulo 01 — Estampa Localizada</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+:root{
+  --navy-900:#0E1638;
+  --navy-800:#141F4D;
+  --navy-700:#1C2A5E;
+  --indigo-600:#5B4FE8;
+  --indigo-500:#6E63EE;
+  --indigo-50:#EEECFD;
+  --bg:#EEF1F8;
+  --card:#FFFFFF;
+  --border:#E1E4F0;
+  --text:#161A3B;
+  --text-muted:#6A6F94;
+  --danger:#DC3630;
+  --danger-50:#FCEAE9;
+  --amber:#B8860B;
+  --ok:#1C9A6C;
+  --ok-50:#E7F7F1;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(20,25,70,.04), 0 8px 24px -12px rgba(20,25,70,.12);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* ---------- Header ---------- */
+.topbar{
+  background:linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 1.5px),
+    linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-size: 14px 14px, auto;
+  color:#fff;
+  padding:16px 28px;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  flex-wrap:wrap;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.brand{display:flex;align-items:center;gap:10px;font-family:'Sora',sans-serif;font-weight:700;font-size:19px;letter-spacing:.02em;}
+.brand-mark{
+  width:36px;height:36px;border:1.5px solid rgba(255,255,255,.75);border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+}
+.topbar-title{
+  font-family:'Sora',sans-serif;font-weight:700;font-size:20px;
+  flex:1;text-align:center;min-width:160px;
+}
+.ref-box{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:10px;
+  padding:8px 16px;
+  min-width:190px;
+}
+.ref-box label{
+  display:block;font-size:10.5px;letter-spacing:.14em;font-weight:700;
+  color:rgba(255,255,255,.55);text-transform:uppercase;margin-bottom:3px;
+}
+.ref-box input{
+  background:transparent;border:none;outline:none;color:#fff;
+  font-family:'JetBrains Mono',monospace;font-weight:700;font-size:19px;
+  width:100%;padding:0;
+}
+.ref-box input::placeholder{color:rgba(255,255,255,.35);}
+.ref-actions{display:flex;gap:6px;margin-top:6px;}
+.ref-actions button{
+  background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;
+  font-family:'Inter',sans-serif;font-weight:600;cursor:pointer;padding:2px 0;
+}
+.ref-actions button:hover{color:#fff;text-decoration:underline;}
+.home-link{
+  display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);
+  text-decoration:none;font-weight:600;font-size:14px;white-space:nowrap;
+}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1560px;margin:0 auto;padding:26px 24px 60px;}
+
+.row-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;flex-wrap:wrap;}
+.row-toolbar-title{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;color:var(--navy-900);letter-spacing:.03em;text-transform:uppercase;}
+.row-toolbar-sub{color:var(--text-muted);font-size:12.5px;font-weight:500;margin-top:2px;}
+.btn-add-estampa{
+  display:inline-flex;align-items:center;gap:9px;background:var(--indigo-600);color:#fff;border:none;
+  border-radius:10px;padding:10px 16px;font-weight:700;font-size:13.5px;cursor:pointer;
+  box-shadow:0 6px 16px -6px rgba(91,79,232,.5);
+}
+.btn-add-estampa:hover{background:#4C41D6;}
+.btn-add-estampa svg{width:15px;height:15px;}
+
+.cards-row{display:grid;grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));gap:22px;align-items:start;}
+.cards-row>.card{width:100%;margin:0;}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:22px 22px 24px;
+}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:18px;}
+.card-title{font-family:'Sora',sans-serif;font-weight:700;font-size:16px;letter-spacing:.03em;color:var(--navy-900);}
+.card-title-input{
+  font-family:'Sora',sans-serif;font-weight:700;font-size:16px;letter-spacing:.03em;color:var(--navy-900);
+  border:1px solid transparent;background:transparent;outline:none;width:100%;
+  padding:3px 6px;margin:-3px -6px -3px -7px;border-radius:7px;text-transform:uppercase;
+}
+.card-title-input::placeholder{color:var(--navy-900);opacity:1;}
+.card-title-input:hover{background:var(--indigo-50);}
+.card-title-input:focus{background:#fff;border-color:var(--indigo-500);box-shadow:0 0 0 3px var(--indigo-50);}
+.card-sub{color:var(--text-muted);font-size:12.5px;margin-top:2px;}
+.icon-btn{
+  width:34px;height:34px;border-radius:9px;border:1.5px solid var(--border);
+  background:#fff;color:var(--indigo-600);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:.15s;
+}
+.icon-btn:hover{background:var(--indigo-50);border-color:var(--indigo-500);}
+.icon-btn svg{width:17px;height:17px;}
+
+
+.mini-del{
+  background:var(--danger-50);color:var(--danger);border:none;border-radius:7px;
+  width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.mini-del svg{width:13px;height:13px;}
+
+/* dropzone */
+.dropzone{
+  border:1.5px dashed #C7CBE6;
+  border-radius:12px;
+  min-height:220px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  background:#F8F9FD;
+  cursor:pointer;
+  padding:20px;
+  text-align:center;
+  transition:.15s;
+  position:relative;
+}
+.dropzone.drag{background:var(--indigo-50);border-color:var(--indigo-500);}
+.dropzone svg{width:42px;height:42px;color:var(--indigo-500);}
+.dropzone p{margin:0;color:var(--text-muted);font-size:13.5px;line-height:1.5;}
+.btn-outline{
+  border:1.5px solid var(--indigo-500);color:var(--indigo-600);background:#fff;
+  padding:9px 18px;border-radius:9px;font-weight:600;font-size:13.5px;cursor:pointer;
+}
+.btn-outline:hover{background:var(--indigo-50);}
+
+.image-preview{
+  position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border);
+  background:#F1F2F4;min-height:150px;
+}
+.image-preview img{width:100%;display:block;max-height:280px;object-fit:contain;background:#fff;}
+.zoom-btn{
+  position:absolute;top:10px;right:10px;background:rgba(14,22,56,.72);color:#fff;
+  border:none;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  backdrop-filter:blur(2px);
+}
+.zoom-btn svg{width:16px;height:16px;}
+.img-actions{display:flex;justify-content:center;gap:22px;margin-top:12px;}
+.img-actions button{
+  background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:5px;
+  cursor:pointer;color:var(--text-muted);font-size:11.5px;font-weight:600;
+}
+.circle-icon{
+  width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.circle-icon.edit{background:var(--indigo-600);}
+.circle-icon.del{background:var(--danger);}
+.circle-icon svg{width:15px;height:15px;}
+
+.timestamp-pill{
+  display:inline-flex;align-items:center;gap:6px;margin-top:10px;
+  background:var(--ok-50);color:var(--ok);border:1px solid #CDEEE0;
+  padding:5px 11px;border-radius:100px;font-size:11.5px;font-weight:600;
+}
+.timestamp-pill svg{width:12px;height:12px;}
+
+.radio-row{display:flex;gap:24px;margin-top:14px;}
+.radio-opt{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text);}
+.radio-opt input{accent-color:var(--indigo-600);width:16px;height:16px;}
+
+.field{margin-top:16px;}
+.field label{display:block;font-weight:700;font-size:13.5px;color:var(--navy-900);margin-bottom:7px;}
+.field input[type=text], .field textarea{
+  width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;
+  font-family:'Inter',sans-serif;font-size:13.5px;color:var(--text);background:#fff;
+  outline:none;transition:.15s;
+}
+.field input[type=text]:focus, .field textarea:focus{border-color:var(--indigo-500);box-shadow:0 0 0 3px var(--indigo-50);}
+.field select{
+  width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;
+  font-family:'Inter',sans-serif;font-size:13.5px;color:var(--text);background:#fff;
+  outline:none;transition:.15s;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236A6F94' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:16px;padding-right:36px;
+}
+.field select:focus{border-color:var(--indigo-500);box-shadow:0 0 0 3px var(--indigo-50);}
+
+.pantone-legend{font-size:11px;color:var(--text-muted);margin:-2px 0 8px;}
+
+.pantone-list{margin-top:16px;}
+.pantone-list>label{display:block;font-weight:700;font-size:13.5px;color:var(--navy-900);margin-bottom:9px;}
+.pantone-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.seq-badge{
+  width:22px;height:22px;border-radius:6px;background:var(--navy-900);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;
+}
+.swatch{
+  width:38px;height:38px;border-radius:8px;border:1px solid var(--border);flex-shrink:0;padding:0;cursor:pointer;
+}
+.pantone-row input[type=text]{
+  flex:1;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13.5px;
+  font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--text); outline:none;
+}
+.pantone-row input[type=text]:focus{border-color:var(--indigo-500);box-shadow:0 0 0 3px var(--indigo-50);}
+.pantone-row .ink-code, .pantone-row .fabric-code{
+  width:46px;flex:none;text-align:center;
+}
+.pantone-row .rm-pantone{
+  background:none;border:none;color:var(--text-muted);cursor:pointer;flex-shrink:0;width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;border-radius:7px;
+}
+.pantone-row .rm-pantone:hover{background:var(--danger-50);color:var(--danger);}
+.pantone-row .rm-pantone svg{width:14px;height:14px;}
+
+.add-pantone-btn{
+  display:inline-flex;align-items:center;gap:8px;background:none;border:none;color:var(--indigo-600);
+  font-weight:700;font-size:13.5px;cursor:pointer;padding:8px 0 0;
+}
+.add-pantone-btn .plus-circ{
+  width:22px;height:22px;border-radius:50%;background:var(--indigo-600);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+}
+.add-pantone-btn .plus-circ svg{width:12px;height:12px;}
+
+.add-estampa-btn{
+  display:flex;align-items:center;gap:8px;justify-content:center;width:100%;
+  border:1.5px dashed var(--indigo-400,#B8B2F5);color:var(--indigo-600);background:var(--indigo-50);
+  padding:11px;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer;margin-top:6px;
+}
+.add-estampa-btn:hover{background:#E2DFFC;}
+
+.obs-card{margin-top:22px;}
+.obs-card textarea{min-height:100px;resize:vertical;}
+
+.recent-block{margin-top:22px;padding-top:20px;border-top:1px solid var(--border);}
+.recent-block-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.recent-block-head label{font-weight:700;font-size:13.5px;color:var(--navy-900);}
+.recent-block-head span{font-size:11.5px;color:var(--text-muted);}
+.recent-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;}
+.recent-item{
+  border:1px solid var(--border);border-radius:11px;padding:12px 14px;background:#FBFBFE;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.recent-item-ref{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14.5px;color:var(--navy-900);}
+.recent-item-meta{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.recent-item-open{
+  background:var(--indigo-50);color:var(--indigo-600);border:none;border-radius:8px;
+  padding:7px 12px;font-weight:700;font-size:12px;cursor:pointer;flex-shrink:0;
+}
+.recent-item-open:hover{background:#E2DFFC;}
+.recent-empty{color:var(--text-muted);font-size:12.5px;font-style:italic;}
+
+/* ---------- Search ---------- */
+.search-trigger{
+  display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+  color:#fff;border-radius:10px;padding:9px 14px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;
+}
+.search-trigger:hover{background:rgba(255,255,255,.16);}
+.search-trigger svg{width:15px;height:15px;}
+
+.search-overlay{
+  position:fixed;inset:0;background:rgba(9,13,32,.55);display:none;align-items:flex-start;justify-content:center;
+  z-index:900;padding:6vh 20px;overflow-y:auto;
+}
+.search-overlay.open{display:flex;}
+.search-modal{
+  background:#fff;border-radius:16px;max-width:820px;width:100%;box-shadow:0 24px 60px -20px rgba(9,13,32,.4);
+  overflow:hidden;
+}
+.search-modal-head{
+  background:linear-gradient(180deg,var(--navy-800),var(--navy-900));color:#fff;padding:20px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.search-modal-head h3{margin:0;font-size:16px;}
+.search-modal-head p{margin:3px 0 0;font-size:12px;color:rgba(255,255,255,.6);}
+.search-modal-close{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;}
+.search-modal-body{padding:22px 24px;}
+.search-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:16px;}
+.search-actions{display:flex;justify-content:flex-end;gap:10px;margin-bottom:18px;}
+.search-results{border-top:1px solid var(--border);padding-top:14px;max-height:38vh;overflow-y:auto;}
+.search-result-item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border);
+}
+.search-result-item:last-child{border-bottom:none;}
+.search-result-main{min-width:0;}
+.search-result-ref{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--navy-900);}
+.search-result-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;}
+.tag-chip{background:var(--indigo-50);color:var(--indigo-600);font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:100px;}
+.search-result-meta{font-size:11.5px;color:var(--text-muted);margin-top:3px;}
+.search-empty-state{color:var(--text-muted);font-size:13px;text-align:center;padding:30px 10px;}
+.search-loading{color:var(--text-muted);font-size:13px;text-align:center;padding:20px 10px;}
+
+.bottom-bar{display:flex;justify-content:flex-end;gap:12px;margin-top:24px;flex-wrap:wrap;}
+.btn-primary{
+  background:var(--indigo-600);color:#fff;border:none;border-radius:10px;
+  padding:12px 22px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:9px;cursor:pointer;
+  box-shadow:0 6px 16px -6px rgba(91,79,232,.55);
+}
+.btn-primary:hover{background:#4C41D6;}
+.btn-primary svg{width:17px;height:17px;}
+.btn-secondary{
+  background:#fff;color:var(--navy-900);border:1.5px solid var(--border);border-radius:10px;
+  padding:12px 20px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:9px;cursor:pointer;
+}
+.btn-secondary:hover{border-color:var(--indigo-500);color:var(--indigo-600);}
+.btn-secondary svg{width:17px;height:17px;}
+.save-toast{
+  position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--navy-900);color:#fff;padding:11px 20px;border-radius:10px;font-size:13.5px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.25s;display:flex;align-items:center;gap:9px;z-index:500;
+}
+.save-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.save-toast svg{width:15px;height:15px;color:var(--ok);}
+
+/* ---------- Lightbox ---------- */
+.lightbox{
+  position:fixed;inset:0;background:rgba(9,13,32,.92);display:none;align-items:center;justify-content:center;
+  z-index:1000;flex-direction:column;
+}
+.lightbox.open{display:flex;}
+.lightbox-stage{overflow:hidden;flex:1;width:100%;display:flex;align-items:center;justify-content:center;cursor:grab;}
+.lightbox-stage.grabbing{cursor:grabbing;}
+.lightbox-stage img{max-width:92vw;max-height:80vh;user-select:none;transition:transform .05s linear;}
+.lightbox-bar{
+  display:flex;align-items:center;gap:14px;padding:16px;color:#fff;
+}
+.lightbox-bar button{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;
+  width:38px;height:38px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.lightbox-bar button:hover{background:rgba(255,255,255,.2);}
+.lightbox-bar button svg{width:17px;height:17px;}
+.lightbox-close{
+  position:absolute;top:18px;right:22px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);
+  color:#fff;width:38px;height:38px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.lightbox-hint{color:rgba(255,255,255,.55);font-size:12px;}
+
+/* ---------- Print view ---------- */
+.print-area{display:none;}
+@media print{
+  html, body{margin:0;padding:0;background:#fff;height:auto;}
+  .topbar, .wrap, .save-toast, .lightbox, .search-overlay{display:none !important;}
+  .print-area{display:block;width:100%;}
+  @page{size:A4;margin:12mm;}
+}
+.pv-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #0E1638;padding-bottom:10px;margin-bottom:16px;}
+.pv-header .pv-brand{font-family:'Sora',sans-serif;font-weight:800;font-size:15px;color:#0E1638;letter-spacing:.06em;}
+.pv-ref{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:28px;color:#0E1638;}
+.pv-ref-label{font-size:10.5px;letter-spacing:.14em;color:#6A6F94;font-weight:700;text-transform:uppercase;}
+.pv-meta{font-size:11px;color:#6A6F94;}
+.pv-section-title{
+  font-family:'Sora',sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;
+  color:#0E1638;border-left:5px solid #5B4FE8;padding-left:9px;margin:16px 0 10px;
+}
+.pv-featured{border:2px solid #0E1638;border-radius:10px;padding:12px;margin-bottom:12px;page-break-inside:avoid;}
+.pv-featured img{width:100%;max-height:300px;object-fit:contain;display:block;margin:0 auto 8px;}
+.pv-desc{font-size:11.5px;color:#333;margin-bottom:4px;}
+.pv-tagless{border:1.5px solid #d8dae8;border-radius:10px;padding:12px;page-break-inside:avoid;}
+.pv-tagless img{width:100%;max-height:200px;object-fit:contain;display:block;margin:0 auto 8px;}
+.pv-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11px;}
+.pv-table th{
+  text-align:left;background:#EEF1F8;color:#0E1638;padding:5px 8px;font-size:9.5px;
+  text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #0E1638;
+}
+.pv-table td{padding:5px 8px;border-bottom:1px solid #E1E4F0;vertical-align:middle;}
+.pv-table-mini th:first-child, .pv-table-mini td:first-child{width:28px;}
+.pv-swatch{width:16px;height:16px;border-radius:4px;border:1px solid #ccc;display:inline-block;vertical-align:middle;}
+.pv-obs{margin-top:14px;font-size:11.5px;color:#333;border-top:1px dashed #ccc;padding-top:8px;}
+
+
+.hidden-file-input{display:none;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="brand-mark">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 11-14h-7l1-6z"/></svg>
+    </span>
+    SGE
+  </div>
+  <div class="topbar-title">Módulo · 01 — Estampa Localizada</div>
+  <div class="ref-box">
+    <label for="refInput">Referência</label>
+    <input id="refInput" type="text" class="mono" placeholder="00000" maxlength="20">
+    <div class="ref-actions">
+      <button id="btnLoadRef" type="button">Carregar</button>
+      <button id="btnNewRef" type="button">Nova ficha</button>
+    </div>
+  </div>
+  <button class="search-trigger" id="btnOpenSearch" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    Busca avançada
+  </button>
+  <a class="home-link" href="modulo-00.html">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+    Início
+  </a>
+</div>
+
+<div class="wrap">
+
+  <div class="row-toolbar">
+    <div>
+      <div class="row-toolbar-title">Estampas &amp; Tagless</div>
+      <div class="row-toolbar-sub">Estampa 1 · Estampa 2 · Tagless — tudo lado a lado, na ordem de produção</div>
+    </div>
+    <button class="btn-add-estampa" id="btnAddEstampaTop" title="Adicionar nova estampa">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>
+      Adicionar Estampa Localizada
+    </button>
+  </div>
+
+  <div class="cards-row" id="cardsRow">
+    <div id="estampasContainer" style="display:contents;"></div>
+
+    <!-- TAGLESS -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">TAGLESS GOLA</div>
+          <div class="card-sub">Etiqueta impressa internamente na gola</div>
+        </div>
+      </div>
+
+      <div class="dropzone" id="taglessDrop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <p>Arraste uma imagem ou<br>clique para selecionar</p>
+        <button type="button" class="btn-outline" id="taglessSelectBtn">Selecionar Arquivo</button>
+        <input type="file" accept="image/*" class="hidden-file-input" id="taglessFileInput">
+      </div>
+      <div id="taglessPreviewWrap"></div>
+
+      <div class="radio-row">
+        <label class="radio-opt"><input type="radio" name="taglessTech" value="tampografia" checked> Tampografia</label>
+        <label class="radio-opt"><input type="radio" name="taglessTech" value="silk"> Silk</label>
+      </div>
+
+      <div class="field">
+        <label>Descrição</label>
+        <input type="text" id="taglessDesc" placeholder="Ex: Tagless Gola">
+      </div>
+
+      <div class="pantone-list">
+        <label>Pantone</label>
+        <div class="pantone-legend">Sequência · cor · código Pantone · cód. tinta · cód. tecido</div>
+        <div id="taglessPantones"></div>
+        <button class="add-pantone-btn" id="taglessAddPantone" type="button">
+          <span class="plus-circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></span>
+          Adicionar Pantone
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card obs-card">
+    <div class="field" style="margin-top:0;">
+      <label>Observações</label>
+      <textarea id="observacoes" placeholder="Notas gerais para o serigrafista..."></textarea>
+    </div>
+
+    <div class="recent-block">
+      <div class="recent-block-head">
+        <label>Últimas fichas salvas</label>
+        <span>Mostrando até 4 mais recentes</span>
+      </div>
+      <div class="recent-list" id="recentList">
+        <div class="recent-empty">Nenhuma ficha salva ainda.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn-secondary" id="btnPrint" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Imprimir Ficha
+    </button>
+    <button class="btn-primary" id="btnSave" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+      Salvar
+    </button>
+  </div>
+</div>
+
+<div class="save-toast" id="saveToast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
+  <span id="saveToastText">Ficha salva com sucesso</span>
+</div>
+
+<!-- Busca avançada -->
+<div class="search-overlay" id="searchOverlay">
+  <div class="search-modal">
+    <div class="search-modal-head">
+      <div>
+        <h3>Busca avançada</h3>
+        <p>Encontre fichas salvas por referência, descrição, aplicação, pantone ou técnica</p>
+      </div>
+      <button class="search-modal-close" id="searchClose" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="search-modal-body">
+      <div class="search-grid">
+        <div class="field" style="margin-top:0;">
+          <label>Referência</label>
+          <input type="text" id="searchRef" placeholder="Ex: 29001">
+        </div>
+        <div class="field" style="margin-top:0;">
+          <label>Descrição / palavra-chave</label>
+          <input type="text" id="searchDesc" placeholder="Ex: Frente Localizada">
+        </div>
+        <div class="field" style="margin-top:0;">
+          <label>Aplicação</label>
+          <select id="searchApplication">
+            <option value="">Qualquer</option>
+            <option value="Foil">Foil</option>
+            <option value="Floco">Floco</option>
+            <option value="Termo">Termo</option>
+            <option value="Aplicação">Aplicação</option>
+            <option value="Bordado">Bordado</option>
+            <option value="DTF">DTF</option>
+          </select>
+        </div>
+        <div class="field" style="margin-top:0;">
+          <label>Código Pantone</label>
+          <input type="text" id="searchPantone" placeholder="Ex: 485">
+        </div>
+        <div class="field" style="margin-top:0;">
+          <label>Técnica Tagless</label>
+          <select id="searchTech">
+            <option value="">Qualquer</option>
+            <option value="tampografia">Tampografia</option>
+            <option value="silk">Silk</option>
+          </select>
+        </div>
+      </div>
+      <div class="search-actions">
+        <button class="btn-secondary" id="searchClear" type="button">Limpar</button>
+        <button class="btn-primary" id="searchGo" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Buscar
+        </button>
+      </div>
+      <div class="search-results" id="searchResults">
+        <div class="search-empty-state">Defina um ou mais filtros acima e clique em Buscar.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <div class="lightbox-stage" id="lightboxStage">
+    <img id="lightboxImg" src="" alt="Ampliação da estampa">
+  </div>
+  <div class="lightbox-bar">
+    <button id="lbZoomOut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M8 11h6"/></svg></button>
+    <button id="lbReset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/></svg></button>
+    <button id="lbZoomIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg></button>
+    <span class="lightbox-hint">Use a roda do mouse ou os botões para ampliar · arraste para mover</span>
+  </div>
+</div>
+
+<!-- Print-only view -->
+<div class="print-area" id="printArea"></div>
+
+<script>
+/* ---------- Banco do navegador (fallback) ----------
+   Quando os módulos rodam como Artifact no Claude, window.storage já existe
+   e é fornecido pela plataforma. Quando o arquivo é aberto sozinho no navegador
+   (fora do Claude), window.storage não existe e as chamadas de salvar geravam erro.
+   Este bloco cria um substituto com a MESMA interface, usando localStorage do
+   navegador, para que os módulos funcionem nos dois cenários sem alterar o
+   restante do código. */
+(function(){
+  if (window.storage && typeof window.storage.get === 'function') return;
+
+  var NS = 'sge_db::';
+  function scopeBase(shared){ return NS + (shared ? 'shared::' : 'user::'); }
+  function fullKey(key, shared){ return scopeBase(shared) + key; }
+
+  // Alguns navegadores bloqueiam até o localStorage para arquivos abertos
+  // localmente (protocolo file://, comum ao baixar e abrir com duplo clique).
+  // Por isso testamos se o localStorage está realmente utilizável antes de
+  // depender dele; se não estiver, caímos para um banco em memória (a sessão
+  // funciona normalmente, mas os dados não sobrevivem a um recarregamento).
+  var localStorageOk = false;
+  try{
+    var testKey = '__sge_storage_test__';
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+    localStorageOk = true;
+  }catch(e){
+    localStorageOk = false;
+  }
+
+  if (localStorageOk){
+    console.warn('[SGE] window.storage não disponível — usando localStorage do navegador como banco de dados local.');
+    window.storage = {
+      get: function(key, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            var raw = localStorage.getItem(fullKey(key, shared));
+            if (raw === null){ reject(new Error('Chave não encontrada: ' + key)); return; }
+            resolve({ key: key, value: raw, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      set: function(key, value, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            localStorage.setItem(fullKey(key, shared), value);
+            resolve({ key: key, value: value, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      delete: function(key, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            var existed = localStorage.getItem(fullKey(key, shared)) !== null;
+            localStorage.removeItem(fullKey(key, shared));
+            resolve({ key: key, deleted: existed, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      },
+      list: function(prefix, shared){
+        return new Promise(function(resolve, reject){
+          try{
+            prefix = prefix || '';
+            var base = scopeBase(shared);
+            var fullPrefix = base + prefix;
+            var keys = [];
+            for(var i=0;i<localStorage.length;i++){
+              var lk = localStorage.key(i);
+              if(lk && lk.indexOf(fullPrefix) === 0){
+                keys.push(lk.slice(base.length));
+              }
+            }
+            resolve({ keys: keys, prefix: prefix, shared: !!shared });
+          }catch(e){ reject(e); }
+        });
+      }
+    };
+  } else {
+    console.warn('[SGE] window.storage e localStorage indisponíveis neste navegador (comum ao abrir o arquivo direto, via file://). Usando memória temporária: os dados NÃO serão salvos ao fechar ou recarregar a página.');
+    window.__sgeStorageIsMemoryOnly = true;
+    var memoryDb = {};
+    window.storage = {
+      get: function(key, shared){
+        return new Promise(function(resolve, reject){
+          var k = fullKey(key, shared);
+          if (!(k in memoryDb)){ reject(new Error('Chave não encontrada: ' + key)); return; }
+          resolve({ key: key, value: memoryDb[k], shared: !!shared });
+        });
+      },
+      set: function(key, value, shared){
+        return new Promise(function(resolve){
+          memoryDb[fullKey(key, shared)] = value;
+          resolve({ key: key, value: value, shared: !!shared });
+        });
+      },
+      delete: function(key, shared){
+        return new Promise(function(resolve){
+          var k = fullKey(key, shared);
+          var existed = k in memoryDb;
+          delete memoryDb[k];
+          resolve({ key: key, deleted: existed, shared: !!shared });
+        });
+      },
+      list: function(prefix, shared){
+        return new Promise(function(resolve){
+          prefix = prefix || '';
+          var base = scopeBase(shared);
+          var fullPrefix = base + prefix;
+          var keys = [];
+          Object.keys(memoryDb).forEach(function(k){
+            if (k.indexOf(fullPrefix) === 0) keys.push(k.slice(base.length));
+          });
+          resolve({ keys: keys, prefix: prefix, shared: !!shared });
+        });
+      }
+    };
+  }
+})();
+</script>
+<script>
+(function(){
+  function mostrarAvisoMemoria(){
+    if(!window.__sgeStorageIsMemoryOnly) return;
+    var bar = document.createElement('div');
+    bar.setAttribute('role','alert');
+    bar.style.cssText = 'position:sticky;top:0;z-index:9999;background:#FBF1E1;color:#8a5a06;border-bottom:1px solid #F0DDB0;padding:10px 16px;font:600 12.5px/1.4 Inter,system-ui,sans-serif;text-align:center;';
+    bar.innerHTML = '\u26A0\uFE0F Este navegador n\u00e3o permite salvar permanentemente para um arquivo aberto localmente (file://). Os dados desta sess\u00e3o ser\u00e3o perdidos ao fechar ou recarregar a p\u00e1gina. Para salvar de verdade, use aqui no Claude ou hospede os arquivos em um servidor local. <button type="button" id="sgeBannerFechar" style="margin-left:10px;background:none;border:1px solid #8a5a06;border-radius:6px;padding:2px 8px;cursor:pointer;color:#8a5a06;font-weight:700;">Entendi</button>';
+    document.body.prepend(bar);
+    document.getElementById('sgeBannerFechar').addEventListener('click', function(){ bar.remove(); });
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', mostrarAvisoMemoria);
+  } else {
+    mostrarAvisoMemoria();
+  }
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+
+  const uid = () => 'id' + Math.random().toString(36).slice(2,10);
+  const nowIso = () => new Date().toISOString();
+  const fmtDateTime = (iso) => {
+    if(!iso) return '';
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2,'0');
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} às ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  function makePantone(){ return { id: uid(), color:'#DC3630', code:'', ink:'', fabric:'' }; }
+  function makeEstampa(){ return { id: uid(), name:'', image:null, addedAt:null, description:'', application:'', applicationDescription:'', pantones:[ makePantone() ] }; }
+
+  let state = {
+    reference: '',
+    estampas: [ makeEstampa() ],
+    tagless: { image:null, addedAt:null, technique:'tampografia', description:'', pantones:[ makePantone() ] },
+    observacoes: ''
+  };
+
+  const $ = sel => document.querySelector(sel);
+  const estampasContainer = $('#estampasContainer');
+  const taglessPreviewWrap = $('#taglessPreviewWrap');
+  const taglessPantonesEl = $('#taglessPantones');
+  const refInput = $('#refInput');
+
+  function svgTrash(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+  }
+  function svgEdit(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  }
+  function svgZoom(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg>';
+  }
+  function svgClock(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
+  }
+  function svgX(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  }
+
+  /* ---------------- Image compression ---------------- */
+  function compressImage(file, maxWidth){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if(width > maxWidth){
+            height = Math.round(height * (maxWidth/width));
+            width = maxWidth;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0,0,width,height);
+          ctx.drawImage(img,0,0,width,height);
+          resolve(canvas.toDataURL('image/jpeg', 0.86));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ---------------- Pantone row render ---------------- */
+  function renderPantoneRow(pantone, seq, onchange, onremove){
+    const row = document.createElement('div');
+    row.className = 'pantone-row';
+    row.innerHTML = `
+      <span class="seq-badge">${seq}</span>
+      <input type="color" class="swatch" value="${pantone.color}" title="Cor do pantone">
+      <input type="text" class="pantone-code" placeholder="Código Pantone" value="${escapeHtml(pantone.code)}">
+      <input type="text" class="ink-code" placeholder="Tinta" value="${escapeHtml(pantone.ink)}" title="Código interno do tipo de tinta">
+      <input type="text" class="fabric-code" placeholder="Tecido" value="${escapeHtml(pantone.fabric||'')}" title="Código interno do tipo de tecido técnico">
+      <button type="button" class="rm-pantone" title="Remover pantone">${svgX()}</button>
+    `;
+    row.querySelector('.swatch').addEventListener('input', e => { pantone.color = e.target.value; onchange(); });
+    row.querySelector('.pantone-code').addEventListener('input', e => { pantone.code = e.target.value; onchange(); });
+    row.querySelector('.ink-code').addEventListener('input', e => { pantone.ink = e.target.value; onchange(); });
+    row.querySelector('.fabric-code').addEventListener('input', e => { pantone.fabric = e.target.value; onchange(); });
+    row.querySelector('.rm-pantone').addEventListener('click', onremove);
+    return row;
+  }
+
+  function escapeHtml(str){
+    return String(str||'').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  }
+
+  function renderPantoneList(container, pantones, rerenderParent){
+    container.innerHTML = '';
+    pantones.forEach((p, i) => {
+      const row = renderPantoneRow(p, i+1, () => {}, () => {
+        pantones.splice(i,1);
+        if(pantones.length === 0) pantones.push(makePantone());
+        renderPantoneList(container, pantones, rerenderParent);
+      });
+      container.appendChild(row);
+    });
+  }
+
+  /* ---------------- Estampa cards ---------------- */
+  function estampaDisplayName(estampa, idx){
+    if(estampa.name && estampa.name.trim()) return estampa.name.trim();
+    return state.estampas.length > 1 ? `Estampa Localizada ${idx+1}` : 'Estampa Localizada';
+  }
+
+  function renderEstampas(){
+    estampasContainer.innerHTML = '';
+    state.estampas.forEach((estampa, idx) => {
+      const block = document.createElement('div');
+      block.className = 'card';
+
+      const defaultName = state.estampas.length > 1 ? `Estampa Localizada ${idx+1}` : 'Estampa Localizada';
+      const head = document.createElement('div');
+      head.className = 'card-head';
+      head.innerHTML = `
+        <div style="flex:1;min-width:0;">
+          <input type="text" class="card-title-input" placeholder="${escapeHtml(defaultName)}" value="${escapeHtml(estampa.name || '')}" title="Clique para renomear esta estampa (ex: COSTA)">
+          <div class="card-sub">${state.estampas.length > 1 ? `Estampa ${idx+1} de ${state.estampas.length}` : 'Estampa principal do módulo'}</div>
+        </div>
+      `;
+      head.querySelector('.card-title-input').addEventListener('input', e => { estampa.name = e.target.value; });
+      if(state.estampas.length > 1){
+        const del = document.createElement('button');
+        del.className = 'mini-del';
+        del.title = 'Remover esta estampa';
+        del.innerHTML = svgTrash();
+        del.addEventListener('click', () => {
+          state.estampas.splice(idx,1);
+          renderEstampas();
+        });
+        head.appendChild(del);
+      }
+      block.appendChild(head);
+
+      // image area
+      const imgArea = document.createElement('div');
+      if(estampa.image){
+        imgArea.innerHTML = `
+          <div class="image-preview">
+            <img src="${estampa.image}" alt="Estampa localizada">
+            <button type="button" class="zoom-btn" title="Ampliar">${svgZoom()}</button>
+          </div>
+          <div class="img-actions">
+            <button type="button" class="act-edit"><span class="circle-icon edit">${svgEdit()}</span>Alterar imagem</button>
+            <button type="button" class="act-del"><span class="circle-icon del">${svgTrash()}</span>Remover</button>
+          </div>
+          ${estampa.addedAt ? `<div class="timestamp-pill">${svgClock()}Adicionado em ${fmtDateTime(estampa.addedAt)}</div>` : ''}
+        `;
+      } else {
+        imgArea.innerHTML = `
+          <div class="dropzone" data-role="drop">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+            <p>Arraste uma imagem ou<br>clique para selecionar</p>
+            <button type="button" class="btn-outline" data-role="select">Selecionar Arquivo</button>
+          </div>
+        `;
+      }
+      block.appendChild(imgArea);
+
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.className = 'hidden-file-input';
+      block.appendChild(fileInput);
+
+      async function handleFile(file){
+        if(!file) return;
+        estampa.image = await compressImage(file, 1400);
+        estampa.addedAt = nowIso();
+        renderEstampas();
+      }
+      fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+      if(estampa.image){
+        imgArea.querySelector('.zoom-btn').addEventListener('click', () => openLightbox(estampa.image));
+        imgArea.querySelector('.act-edit').addEventListener('click', () => fileInput.click());
+        imgArea.querySelector('.act-del').addEventListener('click', () => { estampa.image = null; estampa.addedAt = null; renderEstampas(); });
+      } else {
+        const dz = imgArea.querySelector('[data-role="drop"]');
+        dz.addEventListener('click', () => fileInput.click());
+        imgArea.querySelector('[data-role="select"]').addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
+        ['dragover','dragleave','drop'].forEach(evt => {
+          dz.addEventListener(evt, e => {
+            e.preventDefault();
+            if(evt === 'dragover') dz.classList.add('drag');
+            else dz.classList.remove('drag');
+            if(evt === 'drop') handleFile(e.dataTransfer.files[0]);
+          });
+        });
+      }
+
+      // description
+      const descField = document.createElement('div');
+      descField.className = 'field';
+      descField.innerHTML = `<label>Descrição</label><input type="text" placeholder="Ex: Silk Frente Localizada" value="${escapeHtml(estampa.description)}">`;
+      descField.querySelector('input').addEventListener('input', e => estampa.description = e.target.value);
+      block.appendChild(descField);
+
+      // aplicação
+      const appField = document.createElement('div');
+      appField.className = 'field';
+      const appOptions = ['Foil','Floco','Termo','Aplicação','Bordado','DTF'];
+      appField.innerHTML = `
+        <label>Aplicação</label>
+        <select>
+          <option value="">Nenhuma</option>
+          ${appOptions.map(opt => `<option value="${opt}" ${estampa.application===opt?'selected':''}>${opt}</option>`).join('')}
+        </select>
+      `;
+      appField.querySelector('select').addEventListener('change', e => estampa.application = e.target.value);
+      block.appendChild(appField);
+
+      const appDescField = document.createElement('div');
+      appDescField.className = 'field';
+      appDescField.innerHTML = `<label>Descrição da Aplicação</label><input type="text" placeholder="Ex: Foil dourado no peito direito" value="${escapeHtml(estampa.applicationDescription||'')}">`;
+      appDescField.querySelector('input').addEventListener('input', e => estampa.applicationDescription = e.target.value);
+      block.appendChild(appDescField);
+
+      // pantones
+      const pantoneWrap = document.createElement('div');
+      pantoneWrap.className = 'pantone-list';
+      pantoneWrap.innerHTML = `<label>Pantones</label><div class="pantone-legend">Sequência · cor · código Pantone · cód. tinta · cód. tecido</div>`;
+      const listEl = document.createElement('div');
+      pantoneWrap.appendChild(listEl);
+      renderPantoneList(listEl, estampa.pantones, renderEstampas);
+
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button'; addBtn.className = 'add-pantone-btn';
+      addBtn.innerHTML = `<span class="plus-circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></span>Adicionar Pantone`;
+      addBtn.addEventListener('click', () => {
+        estampa.pantones.push(makePantone());
+        renderPantoneList(listEl, estampa.pantones, renderEstampas);
+      });
+      pantoneWrap.appendChild(addBtn);
+      block.appendChild(pantoneWrap);
+
+      estampasContainer.appendChild(block);
+    });
+  }
+
+  $('#btnAddEstampaTop').addEventListener('click', () => {
+    state.estampas.push(makeEstampa());
+    renderEstampas();
+  });
+
+  /* ---------------- Tagless ---------------- */
+  function renderTagless(){
+    if(state.tagless.image){
+      taglessPreviewWrap.innerHTML = `
+        <div class="image-preview">
+          <img src="${state.tagless.image}" alt="Tagless gola">
+          <button type="button" class="zoom-btn" title="Ampliar">${svgZoom()}</button>
+        </div>
+        <div class="img-actions">
+          <button type="button" class="act-edit"><span class="circle-icon edit">${svgEdit()}</span>Alterar imagem</button>
+          <button type="button" class="act-del"><span class="circle-icon del">${svgTrash()}</span>Remover</button>
+        </div>
+        ${state.tagless.addedAt ? `<div class="timestamp-pill">${svgClock()}Adicionado em ${fmtDateTime(state.tagless.addedAt)}</div>` : ''}
+      `;
+      taglessPreviewWrap.querySelector('.zoom-btn').addEventListener('click', () => openLightbox(state.tagless.image));
+      taglessPreviewWrap.querySelector('.act-edit').addEventListener('click', () => $('#taglessFileInput').click());
+      taglessPreviewWrap.querySelector('.act-del').addEventListener('click', () => {
+        state.tagless.image = null; state.tagless.addedAt = null; renderTagless();
+      });
+      $('#taglessDrop').style.display = 'none';
+    } else {
+      taglessPreviewWrap.innerHTML = '';
+      $('#taglessDrop').style.display = 'flex';
+    }
+  }
+
+  async function handleTaglessFile(file){
+    if(!file) return;
+    state.tagless.image = await compressImage(file, 1400);
+    state.tagless.addedAt = nowIso();
+    renderTagless();
+  }
+  $('#taglessFileInput').addEventListener('change', e => handleTaglessFile(e.target.files[0]));
+  $('#taglessSelectBtn').addEventListener('click', e => { e.stopPropagation(); $('#taglessFileInput').click(); });
+  $('#taglessDrop').addEventListener('click', () => $('#taglessFileInput').click());
+  ['dragover','dragleave','drop'].forEach(evt => {
+    $('#taglessDrop').addEventListener(evt, e => {
+      e.preventDefault();
+      if(evt === 'dragover') $('#taglessDrop').classList.add('drag');
+      else $('#taglessDrop').classList.remove('drag');
+      if(evt === 'drop') handleTaglessFile(e.dataTransfer.files[0]);
+    });
+  });
+  document.querySelectorAll('input[name="taglessTech"]').forEach(r => {
+    r.addEventListener('change', e => { if(e.target.checked) state.tagless.technique = e.target.value; });
+  });
+  $('#taglessDesc').addEventListener('input', e => state.tagless.description = e.target.value);
+  $('#taglessAddPantone').addEventListener('click', () => {
+    state.tagless.pantones.push(makePantone());
+    renderPantoneList(taglessPantonesEl, state.tagless.pantones, () => {});
+  });
+  $('#observacoes').addEventListener('input', e => state.observacoes = e.target.value);
+
+  /* ---------------- Lightbox ---------------- */
+  const lightbox = $('#lightbox'), lbImg = $('#lightboxImg'), lbStage = $('#lightboxStage');
+  let scale = 1, panX = 0, panY = 0, dragging = false, startX = 0, startY = 0;
+
+  function applyTransform(){
+    lbImg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+  }
+  function openLightbox(src){
+    lbImg.src = src; scale = 1; panX = 0; panY = 0; applyTransform();
+    lightbox.classList.add('open');
+  }
+  function closeLightbox(){ lightbox.classList.remove('open'); }
+  $('#lightboxClose').addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e => { if(e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeLightbox(); });
+
+  $('#lbZoomIn').addEventListener('click', () => { scale = Math.min(5, scale + 0.4); applyTransform(); });
+  $('#lbZoomOut').addEventListener('click', () => { scale = Math.max(1, scale - 0.4); if(scale===1){panX=0;panY=0;} applyTransform(); });
+  $('#lbReset').addEventListener('click', () => { scale = 1; panX = 0; panY = 0; applyTransform(); });
+
+  lbStage.addEventListener('wheel', e => {
+    e.preventDefault();
+    scale = Math.min(5, Math.max(1, scale + (e.deltaY < 0 ? 0.25 : -0.25)));
+    if(scale === 1){ panX = 0; panY = 0; }
+    applyTransform();
+  }, { passive:false });
+
+  lbStage.addEventListener('mousedown', e => {
+    if(scale === 1) return;
+    dragging = true; startX = e.clientX - panX; startY = e.clientY - panY;
+    lbStage.classList.add('grabbing');
+  });
+  window.addEventListener('mousemove', e => {
+    if(!dragging) return;
+    panX = e.clientX - startX; panY = e.clientY - startY;
+    applyTransform();
+  });
+  window.addEventListener('mouseup', () => { dragging = false; lbStage.classList.remove('grabbing'); });
+
+  /* ---------------- Storage (persistent across sessions) ---------------- */
+  const toast = $('#saveToast'), toastText = $('#saveToastText');
+  function showToast(msg){
+    toastText.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  async function saveState(){
+    const ref = (refInput.value || '').trim();
+    if(!ref){
+      showToast('Informe uma referência antes de salvar');
+      return;
+    }
+    state.reference = ref;
+    try{
+      await window.storage.set('ficha:' + ref, JSON.stringify(state), false);
+      await window.storage.set('ficha_meta:' + ref, JSON.stringify({ savedAt: nowIso() }), false);
+      showToast('Ficha ' + ref + ' salva com sucesso');
+      refreshRecentList();
+    }catch(err){
+      console.error(err);
+      showToast('Não foi possível salvar. Tente novamente.');
+    }
+  }
+
+  async function loadFichaByRef(ref){
+    if(!ref){ showToast('Informe uma referência para carregar'); return false; }
+    try{
+      const result = await window.storage.get('ficha:' + ref);
+      if(!result){ showToast('Nenhuma ficha encontrada para ' + ref); return false; }
+      const loaded = JSON.parse(result.value);
+      state = Object.assign({ reference:'', estampas:[makeEstampa()], tagless:{image:null,addedAt:null,technique:'tampografia',description:'',pantones:[makePantone()]}, observacoes:'' }, loaded);
+      if(!state.estampas || state.estampas.length === 0) state.estampas = [makeEstampa()];
+      state.estampas.forEach(e => { if(e.application === undefined) e.application=''; if(e.applicationDescription === undefined) e.applicationDescription=''; if(e.addedAt === undefined) e.addedAt=null; e.pantones.forEach(p => { if(p.fabric === undefined) p.fabric=''; }); });
+      state.tagless.pantones.forEach(p => { if(p.fabric === undefined) p.fabric=''; });
+      hydrateUI();
+      showToast('Ficha ' + ref + ' carregada');
+      return true;
+    }catch(err){
+      showToast('Nenhuma ficha encontrada para ' + ref);
+      return false;
+    }
+  }
+
+  function loadState(){
+    return loadFichaByRef((refInput.value || '').trim());
+  }
+
+  function hydrateUI(){
+    refInput.value = state.reference || '';
+    renderEstampas();
+    renderTagless();
+    renderPantoneList(taglessPantonesEl, state.tagless.pantones, () => {});
+    document.querySelectorAll('input[name="taglessTech"]').forEach(r => { r.checked = (r.value === state.tagless.technique); });
+    $('#taglessDesc').value = state.tagless.description || '';
+    $('#observacoes').value = state.observacoes || '';
+  }
+
+  $('#btnSave').addEventListener('click', saveState);
+  $('#btnLoadRef').addEventListener('click', loadState);
+  $('#btnNewRef').addEventListener('click', () => {
+    state = { reference:'', estampas:[makeEstampa()], tagless:{image:null,addedAt:null,technique:'tampografia',description:'',pantones:[makePantone()]}, observacoes:'' };
+    hydrateUI();
+    showToast('Nova ficha em branco');
+  });
+
+  /* ---------------- Últimas fichas salvas ---------------- */
+  const recentList = $('#recentList');
+
+  async function refreshRecentList(){
+    try{
+      const listing = await window.storage.list('ficha_meta:');
+      const keys = (listing && listing.keys) ? listing.keys : [];
+      if(keys.length === 0){
+        recentList.innerHTML = '<div class="recent-empty">Nenhuma ficha salva ainda.</div>';
+        return;
+      }
+      const items = [];
+      for(const key of keys){
+        try{
+          const r = await window.storage.get(key, false);
+          if(r){
+            const meta = JSON.parse(r.value);
+            items.push({ ref: key.replace('ficha_meta:',''), savedAt: meta.savedAt });
+          }
+        }catch(e){ /* ignore missing */ }
+      }
+      items.sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
+      renderRecentList(items.slice(0,4));
+    }catch(err){
+      recentList.innerHTML = '<div class="recent-empty">Nenhuma ficha salva ainda.</div>';
+    }
+  }
+
+  function renderRecentList(items){
+    if(!items || items.length === 0){
+      recentList.innerHTML = '<div class="recent-empty">Nenhuma ficha salva ainda.</div>';
+      return;
+    }
+    recentList.innerHTML = '';
+    items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'recent-item';
+      el.innerHTML = `
+        <div>
+          <div class="recent-item-ref">${escapeHtml(item.ref)}</div>
+          <div class="recent-item-meta">${item.savedAt ? 'Salva em ' + fmtDateTime(item.savedAt) : ''}</div>
+        </div>
+        <button class="recent-item-open" type="button">Abrir</button>
+      `;
+      el.querySelector('.recent-item-open').addEventListener('click', () => loadFichaByRef(item.ref));
+      recentList.appendChild(el);
+    });
+  }
+
+  refreshRecentList();
+
+  /* ---------------- Abrir já carregado via ?ref=XXXX (link vindo de outro módulo) ---------------- */
+  (function openFromQueryParam(){
+    try{
+      const params = new URLSearchParams(window.location.search);
+      const refParam = (params.get('ref') || '').trim();
+      if(refParam){
+        refInput.value = refParam;
+        loadFichaByRef(refParam);
+      }
+    }catch(e){ /* ignora ambientes sem URLSearchParams */ }
+  })();
+
+  /* ---------------- Busca avançada ---------------- */
+  const searchOverlay = $('#searchOverlay');
+  function openSearch(){ searchOverlay.classList.add('open'); }
+  function closeSearch(){ searchOverlay.classList.remove('open'); }
+  $('#btnOpenSearch').addEventListener('click', openSearch);
+  $('#searchClose').addEventListener('click', closeSearch);
+  searchOverlay.addEventListener('click', e => { if(e.target === searchOverlay) closeSearch(); });
+
+  $('#searchClear').addEventListener('click', () => {
+    $('#searchRef').value = '';
+    $('#searchDesc').value = '';
+    $('#searchApplication').value = '';
+    $('#searchPantone').value = '';
+    $('#searchTech').value = '';
+    $('#searchResults').innerHTML = '<div class="search-empty-state">Defina um ou mais filtros acima e clique em Buscar.</div>';
+  });
+
+  function fichaMatches(f, filters){
+    if(filters.ref && !(f.reference || '').toLowerCase().includes(filters.ref)) return false;
+    if(filters.tech && f.tagless && f.tagless.technique !== filters.tech) return false;
+
+    if(filters.desc){
+      const haystack = [
+        ...(f.estampas||[]).map(e => (e.description||'') + ' ' + (e.name||'') + ' ' + (e.applicationDescription||'')),
+        (f.tagless && f.tagless.description) || '',
+        f.observacoes || ''
+      ].join(' ').toLowerCase();
+      if(!haystack.includes(filters.desc)) return false;
+    }
+    if(filters.application){
+      const hasApp = (f.estampas||[]).some(e => e.application === filters.application);
+      if(!hasApp) return false;
+    }
+    if(filters.pantone){
+      const allCodes = [
+        ...(f.estampas||[]).flatMap(e => (e.pantones||[]).map(p => p.code||'')),
+        ...((f.tagless && f.tagless.pantones) || []).map(p => p.code||'')
+      ].join(' ').toLowerCase();
+      if(!allCodes.includes(filters.pantone)) return false;
+    }
+    return true;
+  }
+
+  async function runSearch(){
+    const filters = {
+      ref: $('#searchRef').value.trim().toLowerCase(),
+      desc: $('#searchDesc').value.trim().toLowerCase(),
+      application: $('#searchApplication').value,
+      pantone: $('#searchPantone').value.trim().toLowerCase(),
+      tech: $('#searchTech').value
+    };
+    const resultsEl = $('#searchResults');
+    resultsEl.innerHTML = '<div class="search-loading">Buscando fichas salvas...</div>';
+
+    try{
+      const listing = await window.storage.list('ficha:');
+      const keys = (listing && listing.keys) ? listing.keys.filter(k => !k.startsWith('ficha_meta:')) : [];
+      const matches = [];
+      for(const key of keys){
+        try{
+          const r = await window.storage.get(key, false);
+          if(!r) continue;
+          const f = JSON.parse(r.value);
+          if(fichaMatches(f, filters)) matches.push(f);
+        }catch(e){ /* skip broken entry */ }
+      }
+      renderSearchResults(matches);
+    }catch(err){
+      resultsEl.innerHTML = '<div class="search-empty-state">Não foi possível buscar agora. Tente novamente.</div>';
+    }
+  }
+
+  function renderSearchResults(matches){
+    const resultsEl = $('#searchResults');
+    if(matches.length === 0){
+      resultsEl.innerHTML = '<div class="search-empty-state">Nenhuma ficha encontrada com esses filtros.</div>';
+      return;
+    }
+    resultsEl.innerHTML = '';
+    matches.forEach(f => {
+      const tags = [];
+      (f.estampas||[]).forEach((e,i) => { if(e.application) tags.push(e.application); });
+      if(f.tagless && f.tagless.technique) tags.push(f.tagless.technique === 'silk' ? 'Silk' : 'Tampografia');
+      const firstDesc = (f.estampas && f.estampas[0] && f.estampas[0].description) || '';
+
+      const item = document.createElement('div');
+      item.className = 'search-result-item';
+      item.innerHTML = `
+        <div class="search-result-main">
+          <div class="search-result-ref">${escapeHtml(f.reference || '—')}</div>
+          <div class="search-result-meta">${escapeHtml(firstDesc || 'Sem descrição')}</div>
+          <div class="search-result-tags">${tags.map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>
+        </div>
+        <button class="recent-item-open" type="button">Abrir</button>
+      `;
+      item.querySelector('.recent-item-open').addEventListener('click', async () => {
+        const ok = await loadFichaByRef(f.reference);
+        if(ok) closeSearch();
+      });
+      resultsEl.appendChild(item);
+    });
+  }
+
+  $('#searchGo').addEventListener('click', runSearch);
+
+
+  function pantoneMiniTable(pantones){
+    if(!pantones || pantones.length === 0) return '';
+    let rows = '';
+    pantones.forEach((p, i) => {
+      rows += `<tr><td>${i+1}</td><td><span class="pv-swatch" style="background:${p.color}"></span></td><td>${escapeHtml(p.code) || '—'}</td><td>${escapeHtml(p.ink) || '—'}</td><td>${escapeHtml(p.fabric) || '—'}</td></tr>`;
+    });
+    return `<table class="pv-table pv-table-mini"><thead><tr><th>#</th><th>Cor</th><th>Pantone</th><th>Cód. Tinta</th><th>Cód. Tecido</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function buildPrintView(){
+    const ref = state.reference || refInput.value || '—';
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const printedAt = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    let html = `
+      <div class="pv-header">
+        <div>
+          <div class="pv-brand">SGE · FICHA DE PRODUÇÃO</div>
+          <div class="pv-meta">Impresso em ${printedAt}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="pv-ref-label">Referência</div>
+          <div class="pv-ref">${escapeHtml(ref)}</div>
+        </div>
+      </div>
+    `;
+
+    html += `<div class="pv-section-title">Estampa Localizada</div>`;
+    state.estampas.forEach((e, i) => {
+      html += `<div class="pv-featured">`;
+      if(e.image) html += `<img src="${e.image}">`;
+      html += `<div class="pv-desc"><strong>${escapeHtml(estampaDisplayName(e, i))}:</strong> ${escapeHtml(e.description || '—')}</div>`;
+      if(e.application) html += `<div class="pv-desc"><strong>Aplicação:</strong> ${escapeHtml(e.application)}${e.applicationDescription ? ' — ' + escapeHtml(e.applicationDescription) : ''}</div>`;
+      html += pantoneMiniTable(e.pantones);
+      html += `</div>`;
+    });
+
+    html += `<div class="pv-section-title">Tagless Gola</div>`;
+    html += `<div class="pv-tagless">`;
+    if(state.tagless.image) html += `<img src="${state.tagless.image}">`;
+    html += `<div class="pv-desc"><strong>Descrição:</strong> ${escapeHtml(state.tagless.description || '—')}</div>`;
+    html += `<div class="pv-desc"><strong>Técnica:</strong> ${state.tagless.technique === 'silk' ? 'Silk' : 'Tampografia'}</div>`;
+    if(state.tagless.addedAt) html += `<div class="pv-desc"><strong>Adicionado em:</strong> ${fmtDateTime(state.tagless.addedAt)}</div>`;
+    html += pantoneMiniTable(state.tagless.pantones);
+    html += `</div>`;
+
+    if(state.observacoes && state.observacoes.trim()){
+      html += `<div class="pv-obs"><strong>Observações:</strong> ${escapeHtml(state.observacoes)}</div>`;
+    }
+
+    $('#printArea').innerHTML = html;
+  }
+
+  $('#btnPrint').addEventListener('click', () => {
+    state.reference = refInput.value.trim();
+    buildPrintView();
+    window.print();
+  });
+
+  refInput.addEventListener('input', e => state.reference = e.target.value);
+
+  /* ---------------- Init ---------------- */
+  refInput.value = '29001';
+  state.reference = '29001';
+  state.estampas[0].description = '';
+  renderEstampas();
+  renderTagless();
+  renderPantoneList(taglessPantonesEl, state.tagless.pantones, () => {});
+})();
+</script>
+</body>
+</html>
