@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGE · Módulo 00 · Início</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+:root{
+  --navy-900:#0E1638;
+  --navy-800:#141F4D;
+  --navy-700:#1C2A5E;
+  --indigo-600:#5B4FE8;
+  --indigo-500:#6E63EE;
+  --indigo-50:#EEECFD;
+  --bg:#EEF1F8;
+  --card:#FFFFFF;
+  --border:#E1E4F0;
+  --text:#161A3B;
+  --text-muted:#6A6F94;
+  --danger:#DC3630;
+  --danger-50:#FCEAE9;
+  --ok:#1C9A6C;
+  --ok-50:#E7F7F1;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(20,25,70,.04), 0 8px 24px -12px rgba(20,25,70,.12);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column;
+}
+h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* topbar — mesmo padrão do guia de identidade */
+.topbar{
+  background:linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-image:radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 1.5px), linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-size:14px 14px, auto;
+  color:#fff;padding:30px 28px;display:flex;align-items:center;justify-content:center;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.topbar h1{
+  margin:0;font-weight:800;font-size:30px;letter-spacing:.01em;
+}
+
+main{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:56px 24px 40px;
+}
+
+.menu-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:36px;max-width:1180px;width:100%;
+}
+
+.modules-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:22px;
+}
+@media (max-width:900px){
+  .modules-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width:520px){
+  .modules-grid{grid-template-columns:1fr;}
+}
+
+.module-btn{
+  position:relative;
+  background:linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  border:none;border-radius:12px;color:#fff;cursor:pointer;
+  padding:34px 18px 22px;display:flex;flex-direction:column;align-items:center;gap:16px;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+  box-shadow:0 1px 2px rgba(20,25,70,.06);
+  overflow:hidden;
+  font-family:'Inter',sans-serif;
+}
+.module-btn::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg, rgba(110,99,238,0) 0%, rgba(110,99,238,0) 100%);
+  transition:background .18s ease;
+  pointer-events:none;
+}
+.module-btn:hover{
+  transform:translateY(-4px);
+  box-shadow:0 14px 30px -10px rgba(20,25,70,.35);
+}
+.module-btn:hover::after{
+  background:linear-gradient(180deg, rgba(110,99,238,.16) 0%, rgba(110,99,238,.05) 100%);
+}
+.module-btn:active{
+  transform:translateY(-1px) scale(.99);
+}
+.module-btn:focus-visible{
+  outline:3px solid var(--indigo-500);outline-offset:3px;
+}
+.module-btn.disabled{
+  cursor:not-allowed;opacity:.55;background:linear-gradient(180deg,var(--navy-700),var(--navy-800));
+}
+.module-btn.disabled:hover{transform:none;box-shadow:0 1px 2px rgba(20,25,70,.06);}
+.module-btn.disabled:hover::after{background:linear-gradient(180deg, rgba(110,99,238,0) 0%, rgba(110,99,238,0) 100%);}
+.soon-badge{
+  position:absolute;top:10px;right:10px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.75);
+  font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;padding:3px 8px;border-radius:100px;z-index:1;border:1px solid rgba(255,255,255,.18);
+}
+.module-icon{
+  width:64px;height:64px;display:flex;align-items:center;justify-content:center;
+  color:#fff;position:relative;z-index:1;
+}
+.module-icon svg{width:44px;height:44px;}
+.module-label{
+  font-family:'Sora',sans-serif;font-weight:700;font-size:16px;position:relative;z-index:1;
+}
+.module-sub{
+  font-size:11.5px;color:rgba(255,255,255,.6);position:relative;z-index:1;text-align:center;line-height:1.4;
+}
+
+/* botão discreto novo usuário */
+.new-user{
+  margin-top:38px;display:flex;align-items:center;gap:10px;
+  background:transparent;border:none;color:var(--navy-800);
+  font-family:'Sora',sans-serif;font-weight:700;font-size:14.5px;cursor:pointer;
+  padding:8px 6px;border-radius:9px;transition:color .15s ease, background .15s ease;
+}
+.new-user:hover{color:var(--indigo-600);background:var(--indigo-50);}
+.new-user .icon-circle{
+  width:32px;height:32px;border-radius:50%;border:1.5px solid var(--navy-800);
+  display:flex;align-items:center;justify-content:center;color:var(--navy-800);
+  transition:border-color .15s ease, color .15s ease;
+}
+.new-user:hover .icon-circle{border-color:var(--indigo-600);color:var(--indigo-600);}
+.new-user .icon-circle svg{width:16px;height:16px;}
+
+footer{
+  text-align:center;padding:18px 0;color:var(--text-muted);font-size:12px;
+}
+footer a{color:inherit;text-decoration:none;border-bottom:1px dashed var(--border);transition:color .15s ease,border-color .15s ease;}
+footer a:hover{color:var(--indigo-600);border-color:var(--indigo-600);}
+
+/* elo discreto — não é destacado visualmente de propósito */
+.secret-link{
+  position:fixed;bottom:6px;right:6px;width:10px;height:10px;
+  background:transparent;border:none;padding:0;cursor:default;opacity:0;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Módulo - 00</h1>
+</div>
+
+<main>
+  <div class="menu-card">
+    <div class="modules-grid">
+
+      <button class="module-btn" onclick="window.location.href='modulo-01.html'">
+        <span class="module-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.5 3.5 9 15l-5 1 1-5L16.5 0.5z" transform="translate(0,2)"/>
+            <path d="M12 19h9"/>
+          </svg>
+        </span>
+        <span class="module-label">Artes</span>
+        <span class="module-sub">Preparação das artes</span>
+      </button>
+
+      <button class="module-btn" onclick="window.location.href='modulo-02.html'">
+        <span class="module-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="14" height="17" rx="2"/>
+            <path d="M7 8h6M7 12h6M7 16h4"/>
+            <path d="M17 6l4 1.2v14L17 20"/>
+          </svg>
+        </span>
+        <span class="module-label">Estamparia</span>
+        <span class="module-sub">Serviço de estamparia</span>
+      </button>
+
+      <button class="module-btn" onclick="window.location.href='modulo-03.html'">
+        <span class="module-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 2v6.2L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 8.2V2"/>
+            <path d="M9 2h6"/>
+            <path d="M7.5 15h9"/>
+          </svg>
+        </span>
+        <span class="module-label">Laboratório de Tinta</span>
+        <span class="module-sub">Fornecedores, receitas e estoque</span>
+      </button>
+
+      <button class="module-btn" onclick="window.location.href='modulo-04.html'">
+        <span class="module-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </span>
+        <span class="module-label">Qualidade</span>
+        <span class="module-sub">Teste e durabilidade</span>
+      </button>
+
+    </div>
+  </div>
+
+  <button class="new-user" id="btnAdmin" style="display:none;" onclick="window.location.href='admin.html'" title="Administração de usuários">
+    <span class="icon-circle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>
+    </span>
+    Administração
+  </button>
+</main>
+
+<footer><a href="modulo-dashboard.html">Sistema SGE v1.0</a> · by&nbsp;2026</footer>
+
+<a class="secret-link" href="https://sge-lake-ten.vercel.app/" aria-hidden="true" tabindex="-1"></a>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script>
+(async function(){
+  await sgeRequireLogin();
+  await sgeMontarBarraUsuario();
+  const perfil = await sgeGetPerfil();
+  if(perfil && perfil.papel === 'admin'){
+    document.getElementById('btnAdmin').style.display = 'flex';
+  }
+})();
+</script>
+
+</body>
+</html>
