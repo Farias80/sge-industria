@@ -733,6 +733,36 @@ footer.appfoot{text-align:center;color:var(--text-muted);font-size:11px;padding:
   }
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/supabase-client.js"></script>
+<script>
+(async function(){
+  await sgeRequireLogin();
+  await sgeMontarBarraUsuario();
+
+  const podeEditar = await sgePodeEditar('qualidade');
+  window.__sgePodeEditarQualidade = podeEditar;
+  if(!podeEditar){
+    document.body.classList.add('sge-readonly');
+    const style = document.createElement('style');
+    style.textContent = `
+      body.sge-readonly button[onclick="salvarCadastro()"],
+      body.sge-readonly button[onclick="addResponsavel()"],
+      body.sge-readonly .icon-btn.danger,
+      body.sge-readonly .icon-btn[onclick^="editarResponsavel"] {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const aviso = document.createElement('div');
+    aviso.setAttribute('role', 'status');
+    aviso.style.cssText = 'position:sticky;top:0;z-index:9997;background:#EEECFD;color:#1C2A5E;border-bottom:1px solid #D9D4FB;padding:9px 16px;font:600 12.5px/1.4 Inter,system-ui,sans-serif;text-align:center;';
+    aviso.textContent = 'Modo somente leitura — você pode visualizar e imprimir. Peça ao Administrador para liberar edição do setor Qualidade.';
+    document.body.prepend(aviso);
+  }
+})();
+</script>
 <script>
 /* ---------- ESTADO ---------- */
 const APLICACOES = ["Foil","Floco","Relevo","Puff","Glitter","Termo","DTF","Outros"];
@@ -760,44 +790,96 @@ function marcarSalvando(texto){
   const el = document.getElementById('saveStatus');
   if(el) el.textContent = texto;
 }
-async function salvarResponsaveisNoBanco(){
-  try{
-    await window.storage.set('m04:responsaveis', JSON.stringify(responsaveis), false);
-  }catch(e){ console.error('Falha ao salvar responsáveis', e); }
-}
 async function salvarRegistroNoBanco(reg){
   try{
-    await window.storage.set('m04:registro:' + reg.id, JSON.stringify(reg), false);
-    marcarSalvando('Salvo no banco do navegador · ' + new Date().toLocaleTimeString('pt-BR'));
+    // Resolve o pedido (Módulo 02) e o responsável técnico para as colunas
+    // relacionais, mas sempre guarda também o texto puro (pedido_numero,
+    // responsavel_nome) para não depender de o vínculo existir.
+    let pedidoId = null;
+    if(reg.pedido){
+      try{
+        const { data: pedidoRow } = await window.sgeSupabase.from('pedidos').select('id').eq('numero', reg.pedido).maybeSingle();
+        if(pedidoRow) pedidoId = pedidoRow.id;
+      }catch(e){ /* pedido pode não existir ainda */ }
+    }
+
+    const payload = {
+      referencia: reg.referencia,
+      pedido_id: pedidoId,
+      pedido_numero: reg.pedido || null,
+      solicitante: reg.solicitante || null,
+      responsavel_id: responsavelSelecionadoId || null,
+      responsavel_nome: reg.responsavel || null,
+      status: reg.status,
+      aprovacao_geral: reg.aprovacaoGeral,
+      ops: reg.ops,
+      testes: reg.testes,
+      imagens: reg.imagens,
+      observacoes: reg.observacoes || null,
+      criado_em: (reg.criadoEm instanceof Date ? reg.criadoEm : new Date(reg.criadoEm)).toISOString()
+    };
+
+    const jaTemIdDoBanco = !!reg._dbId;
+
+    if(jaTemIdDoBanco){
+      const { error } = await window.sgeSupabase.from('registros_qualidade').update(payload).eq('id', reg._dbId);
+      if(error) throw error;
+    } else {
+      const { data: row, error } = await window.sgeSupabase.from('registros_qualidade').insert(payload).select().single();
+      if(error) throw error;
+      reg._dbId = row.id;
+      reg.id = row.id;
+      idEmEdicao = row.id;
+      regSeq = Math.max(regSeq, row.id) + 1;
+    }
+    marcarSalvando('Salvo no Supabase · ' + new Date().toLocaleTimeString('pt-BR'));
   }catch(e){
     console.error('Falha ao salvar cadastro', e);
-    marcarSalvando('Não foi possível salvar no banco do navegador.');
+    marcarSalvando('Não foi possível salvar: ' + sgeMensagemErro(e));
+    throw e;
   }
 }
+
 async function carregarDadosDoBanco(){
   try{
-    const respResult = await window.storage.get('m04:responsaveis', false);
-    responsaveis = respResult ? JSON.parse(respResult.value) : RESPONSAVEIS_SEED.slice();
+    const { data: rows, error } = await window.sgeSupabase.from('responsaveis_qualidade').select('*').order('nome');
+    if(error) throw error;
+    if(!rows || rows.length === 0){
+      const { data: seeded, error: errSeed } = await window.sgeSupabase.from('responsaveis_qualidade')
+        .insert(RESPONSAVEIS_SEED.map(r => ({ nome: r.nome })))
+        .select();
+      if(errSeed) throw errSeed;
+      responsaveis = (seeded || []).map(r => ({ id: r.id, nome: r.nome }));
+    } else {
+      responsaveis = rows.map(r => ({ id: r.id, nome: r.nome }));
+    }
   }catch(e){
+    console.error('Falha ao carregar responsáveis', e);
     responsaveis = RESPONSAVEIS_SEED.slice();
   }
   if(!responsaveis.length) responsaveis = RESPONSAVEIS_SEED.slice();
   respSeq = responsaveis.reduce((max,r)=>Math.max(max, r.id||0), 0) + 1;
-  await salvarResponsaveisNoBanco();
 
   try{
-    const listing = await window.storage.list('m04:registro:', false);
-    const keys = (listing && listing.keys) ? listing.keys : [];
-    const carregados = [];
-    for(const key of keys){
-      try{
-        const r = await window.storage.get(key, false);
-        if(r) carregados.push(JSON.parse(r.value));
-      }catch(e){ /* ignora item corrompido */ }
-    }
-    carregados.sort((a,b)=> new Date(a.criadoEm) - new Date(b.criadoEm));
-    registros = carregados;
+    const { data: rows, error } = await window.sgeSupabase.from('registros_qualidade').select('*').order('criado_em');
+    if(error) throw error;
+    registros = (rows || []).map(r => ({
+      id: r.id,
+      _dbId: r.id,
+      referencia: r.referencia,
+      pedido: r.pedido_numero,
+      solicitante: r.solicitante,
+      ops: r.ops || [],
+      responsavel: r.responsavel_nome,
+      status: r.status,
+      aprovacaoGeral: r.aprovacao_geral,
+      testes: r.testes || { friccao:{}, lavagem:{}, aplicacoes:[] },
+      imagens: r.imagens || {},
+      observacoes: r.observacoes,
+      criadoEm: r.criado_em
+    }));
   }catch(e){
+    console.error('Falha ao carregar cadastros', e);
     registros = [];
   }
   regSeq = registros.reduce((max,r)=>Math.max(max, r.id||0), 0) + 1;
@@ -848,38 +930,54 @@ function renderResponsavelAtual(){
     box.innerHTML = `<div class="responsavel-atual empty"><svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 9v4"/><circle cx="12" cy="12" r="9"/><path d="M12 16h.01"/></svg>Nenhum responsável selecionado para este cadastro</div>`;
   }
 }
-function addResponsavel(){
+async function addResponsavel(){
   const input = document.getElementById('fNovoResp');
   const nome = input.value.trim();
   if(!nome){ toast('Digite um nome antes de adicionar.'); return; }
-  responsaveis.push({id:respSeq++, nome});
-  input.value = '';
-  renderResponsaveis();
-  salvarResponsaveisNoBanco();
-  toast('Responsável técnico adicionado.');
+  try{
+    const { data: row, error } = await window.sgeSupabase.from('responsaveis_qualidade').insert({ nome }).select().single();
+    if(error) throw error;
+    responsaveis.push({ id: row.id, nome: row.nome });
+    input.value = '';
+    renderResponsaveis();
+    toast('Responsável técnico adicionado.');
+  }catch(e){
+    toast('Não foi possível adicionar: ' + sgeMensagemErro(e));
+  }
 }
 function selecionarResponsavel(id){
   responsavelSelecionadoId = (responsavelSelecionadoId===id) ? null : id;
   renderResponsaveis();
 }
-function editarResponsavel(id){
+async function editarResponsavel(id){
   const r = responsaveis.find(x=>x.id===id);
   if(!r) return;
   const novo = prompt('Editar nome do responsável técnico:', r.nome);
   if(novo && novo.trim()){
-    r.nome = novo.trim();
-    renderResponsaveis();
-    salvarResponsaveisNoBanco();
-    toast('Nome atualizado.');
+    if(!(await sgeConfirmar('Salvar o novo nome "' + novo.trim() + '" para este responsável técnico?'))) return;
+    try{
+      const { error } = await window.sgeSupabase.from('responsaveis_qualidade').update({ nome: novo.trim() }).eq('id', id);
+      if(error) throw error;
+      r.nome = novo.trim();
+      renderResponsaveis();
+      toast('Nome atualizado.');
+    }catch(e){
+      toast('Não foi possível atualizar: ' + sgeMensagemErro(e));
+    }
   }
 }
-function excluirResponsavel(id){
-  if(!confirm('Excluir este responsável técnico?')) return;
-  responsaveis = responsaveis.filter(x=>x.id!==id);
-  if(responsavelSelecionadoId===id) responsavelSelecionadoId = null;
-  renderResponsaveis();
-  salvarResponsaveisNoBanco();
-  toast('Responsável removido.');
+async function excluirResponsavel(id){
+  if(!(await sgeConfirmar('Excluir este responsável técnico?'))) return;
+  try{
+    const { error } = await window.sgeSupabase.from('responsaveis_qualidade').delete().eq('id', id);
+    if(error) throw error;
+    responsaveis = responsaveis.filter(x=>x.id!==id);
+    if(responsavelSelecionadoId===id) responsavelSelecionadoId = null;
+    renderResponsaveis();
+    toast('Responsável removido.');
+  }catch(e){
+    toast('Não foi possível excluir: ' + sgeMensagemErro(e));
+  }
 }
 
 /* ---------- REFERÊNCIA -> IMAGENS (Módulo 01) ---------- */
@@ -906,8 +1004,8 @@ async function carregarImagensAmostraDoModulo01(ref){
   const hint = document.getElementById('refHint');
   let ficha = null;
   try{
-    const r = await window.storage.get('ficha:' + ref, false);
-    ficha = r ? JSON.parse(r.value) : null;
+    const { data: row } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', ref).maybeSingle();
+    ficha = row ? row.dados : null;
   }catch(e){
     ficha = null;
   }
@@ -987,8 +1085,8 @@ function onPedidoChange(){
 async function carregarOPsDoModulo02(pedido){
   if(pedido === pedidoCarregadoOps) return; // já carregado, evita sobrescrever edições manuais
   try{
-    const r = await window.storage.get('pedido:' + pedido, false);
-    const dadosPedido = r ? JSON.parse(r.value) : null;
+    const { data: row } = await window.sgeSupabase.from('pedidos').select('referencia, ordens_producao(numero, quantidade, ordem)').eq('numero', pedido).maybeSingle();
+    const dadosPedido = row ? { referencia: row.referencia, ordens: (row.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0)) } : null;
     if(dadosPedido && Array.isArray(dadosPedido.ordens) && dadosPedido.ordens.length){
       ops = dadosPedido.ordens
         .filter(o => o.numero)
@@ -1201,7 +1299,7 @@ function formatDateTimeLocal(date){
   const pad = n => String(n).padStart(2,'0');
   return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
-function salvarCadastro(){
+async function salvarCadastro(){
   const ref = document.getElementById('fRef').value.trim();
   const pedido = document.getElementById('fPedido').value.trim();
   if(!ref || !pedido){
@@ -1212,14 +1310,22 @@ function salvarCadastro(){
     toast('Selecione um responsável técnico antes de salvar.');
     return;
   }
+  if(idEmEdicao && !(await sgeConfirmar('Deseja salvar as alterações neste cadastro de qualidade?'))){
+    return;
+  }
   const reg = coletarCadastroAtual();
+  if(idEmEdicao) reg._dbId = idEmEdicao;
   const existenteIdx = registros.findIndex(r=>r.id===reg.id);
   if(existenteIdx>=0) registros[existenteIdx] = reg; else registros.push(reg);
   idEmEdicao = reg.id;
   regSeq = Math.max(regSeq, reg.id) + 1;
-  marcarSalvando('Salvando no banco do navegador...');
-  salvarRegistroNoBanco(reg);
-  toast('Cadastro salvo com sucesso.');
+  marcarSalvando('Salvando no Supabase...');
+  try{
+    await salvarRegistroNoBanco(reg);
+    toast('Cadastro salvo com sucesso.');
+  }catch(e){
+    toast('Não foi possível salvar: ' + sgeMensagemErro(e));
+  }
   runSearch();
 }
 function limparTudo(){
@@ -1365,10 +1471,10 @@ function runSearch(){
 async function excluirRegistro(id){
   const reg = registros.find(x=>x.id===id);
   if(!reg) return;
-  if(!confirm('Excluir o cadastro da referência ' + (reg.referencia||'—') + ' (Pedido ' + (reg.pedido||'—') + ')? Esta ação não pode ser desfeita.')) return;
+  if(!(await sgeConfirmar('Excluir o cadastro da referência ' + (reg.referencia||'—') + ' (Pedido ' + (reg.pedido||'—') + ')? Esta ação não pode ser desfeita.'))) return;
   try{
-    await window.storage.delete('m04:registro:' + id, false);
-  }catch(e){ /* já pode não existir */ }
+    await window.sgeSupabase.from('registros_qualidade').delete().eq('id', id);
+  }catch(e){ console.error('Falha ao excluir cadastro', e); }
   registros = registros.filter(x=>x.id!==id);
   if(idEmEdicao===id) idEmEdicao = null;
   runSearch();
@@ -1506,7 +1612,7 @@ async function iniciar(){
   renderFriccaoView();
   renderLavagemView();
   runSearch();
-  marcarSalvando(registros.length ? ('Carregado do banco do navegador · ' + registros.length + ' cadastro(s)') : 'Nenhum cadastro salvo ainda.');
+  marcarSalvando(registros.length ? ('Carregado do Supabase · ' + registros.length + ' cadastro(s)') : 'Nenhum cadastro salvo ainda.');
 }
 iniciar();
 document.addEventListener('keydown', e=>{
