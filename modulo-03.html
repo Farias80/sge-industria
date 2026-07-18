@@ -1145,90 +1145,157 @@
   }
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/supabase-client.js"></script>
 <script>
-        // ---------- Banco de dados (fase de teste): window.storage (banco do navegador) ----------
-        // Mantém as mesmas assinaturas de função que o app usa (addData, getAllData, getDataByIndex,
-        // getDataById, updateData, deleteData) para que o restante da aplicação não precise mudar.
-        const DB_PREFIX = 'm03:';
-        const STORES = ['fornecedores', 'produtos', 'receitas', 'materiasPrimas'];
-        const idCounters = {};
+(async function(){
+  await sgeRequireLogin();
+  await sgeMontarBarraUsuario();
 
-        const storeKey = (storeName, id) => `${DB_PREFIX}${storeName}:${id}`;
-        const storePrefix = (storeName) => `${DB_PREFIX}${storeName}:`;
+  const podeEditar = await sgePodeEditar('laboratorio');
+  if(!podeEditar){
+    document.body.classList.add('sge-readonly');
+    const style = document.createElement('style');
+    style.textContent = `
+      body.sge-readonly .editar-fornecedor, body.sge-readonly .excluir-fornecedor,
+      body.sge-readonly .editar-produto, body.sge-readonly .excluir-produto,
+      body.sge-readonly .editar-receita, body.sge-readonly .excluir-receita,
+      body.sge-readonly #formFornecedor button[type="submit"],
+      body.sge-readonly #formProduto button[type="submit"],
+      body.sge-readonly #formReceita button[type="submit"],
+      body.sge-readonly #adicionarMateria, body.sge-readonly #adicionarColoracao {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
 
-        const initDB = async () => {
-            for (const storeName of STORES) {
-                const all = await getAllData(storeName);
-                idCounters[storeName] = all.reduce((max, item) => Math.max(max, item.id || 0), 0) + 1;
+    const aviso = document.createElement('div');
+    aviso.setAttribute('role', 'status');
+    aviso.style.cssText = 'position:sticky;top:0;z-index:9997;background:#EEECFD;color:#1C2A5E;border-bottom:1px solid #D9D4FB;padding:9px 16px;font:600 12.5px/1.4 Inter,system-ui,sans-serif;text-align:center;';
+    aviso.textContent = 'Modo somente leitura — você pode visualizar e imprimir. Peça ao Administrador para liberar edição do setor Laboratório de Tinta.';
+    document.body.prepend(aviso);
+  }
+})();
+</script>
+<script>
+        // ---------- Banco de dados: Supabase (Postgres) ----------
+        // Mantém as MESMAS assinaturas de função que o app já usava (addData,
+        // getAllData, getDataByIndex, getDataById, updateData, deleteData,
+        // clearStore) para que o restante do arquivo não precisasse mudar.
+        // 'ficha:' e 'pedido:' continuam vindo do window.storage (bloco acima)
+        // até os Módulos 01 e 02 também migrarem para o Supabase.
+
+        const STORE_MAP = {
+            fornecedores: {
+                table: 'fornecedores',
+                toDb: (o) => ({ nome: o.nome, cidade: o.cidade, estado: o.estado, contato: o.contato, email: o.email }),
+                fromDb: (r) => ({ id: r.id, nome: r.nome, cidade: r.cidade, estado: r.estado, contato: r.contato, email: r.email })
+            },
+            produtos: {
+                table: 'produtos',
+                toDb: (o) => ({
+                    fornecedor_id: o.fornecedorId ?? null,
+                    nome: o.nome,
+                    lote: o.lote,
+                    data_fabricacao: o.dataFabricacao || null,
+                    quantidade: isNaN(parseFloat(o.quantidade)) ? 0 : parseFloat(o.quantidade)
+                }),
+                fromDb: (r) => ({
+                    id: r.id, fornecedorId: r.fornecedor_id, nome: r.nome, lote: r.lote,
+                    dataFabricacao: r.data_fabricacao, quantidade: Number(r.quantidade),
+                    dataCadastro: r.data_cadastro
+                })
+            },
+            receitas: {
+                table: 'receitas',
+                toDb: (o) => ({
+                    pantone: o.pantone,
+                    estampa_origem: o.estampaOrigem || null,
+                    referencia: o.referencia,
+                    tipo: o.tipo || null,
+                    amostra_pedido: o.amostraPedido || null,
+                    op: o.op || null,
+                    pedido_numero: o.pedido || null
+                }),
+                fromDb: (r) => ({
+                    id: r.id, pantone: r.pantone, estampaOrigem: r.estampa_origem, referencia: r.referencia,
+                    tipo: r.tipo, amostraPedido: r.amostra_pedido, op: r.op, pedido: r.pedido_numero,
+                    dataCadastro: r.criado_em
+                })
+            },
+            materiasPrimas: {
+                table: 'receita_itens',
+                toDb: (o) => ({
+                    receita_id: o.receitaId,
+                    produto_id: o.produtoId,
+                    quantidade: isNaN(parseFloat(o.quantidade)) ? 0 : parseFloat(o.quantidade),
+                    tipo: o.tipo || null,
+                    categoria: o.grupo === 'coloracao' ? 'coloracao' : 'materia_prima'
+                }),
+                fromDb: (r) => ({
+                    id: r.id, receitaId: r.receita_id, produtoId: r.produto_id, quantidade: Number(r.quantidade),
+                    tipo: r.tipo || '', grupo: r.categoria === 'coloracao' ? 'coloracao' : 'materiaPrima',
+                    dataCadastro: r.criado_em
+                })
             }
         };
 
-        // Funções genéricas para operações no banco do navegador
+        // nome do índice usado pelo app (camelCase) -> coluna real no Postgres
+        const INDEX_MAP = { receitaId: 'receita_id', fornecedorId: 'fornecedor_id', produtoId: 'produto_id' };
+
+        const STORES = ['fornecedores', 'produtos', 'receitas', 'materiasPrimas'];
+
+        const initDB = async () => { /* nada a inicializar: os ids agora são gerados pelo Postgres */ };
+
         const addData = async (storeName, data) => {
-            if (idCounters[storeName] === undefined) {
-                const all = await getAllData(storeName);
-                idCounters[storeName] = all.reduce((max, item) => Math.max(max, item.id || 0), 0) + 1;
-            }
-            const id = idCounters[storeName];
-            const record = { ...data, id };
-            await window.storage.set(storeKey(storeName, id), JSON.stringify(record), false);
-            idCounters[storeName] = id + 1;
-            return id;
+            const cfg = STORE_MAP[storeName];
+            const { data: row, error } = await window.sgeSupabase.from(cfg.table).insert(cfg.toDb(data)).select().single();
+            if (error) { console.error('Erro ao inserir em', storeName, error); throw error; }
+            return row.id;
         };
 
         const getAllData = async (storeName) => {
-            try {
-                const listing = await window.storage.list(storePrefix(storeName), false);
-                const keys = (listing && listing.keys) ? listing.keys : [];
-                const items = [];
-                for (const key of keys) {
-                    try {
-                        const r = await window.storage.get(key, false);
-                        if (r) items.push(JSON.parse(r.value));
-                    } catch (e) { /* ignora item corrompido */ }
-                }
-                items.sort((a, b) => (a.id || 0) - (b.id || 0));
-                return items;
-            } catch (e) {
-                return [];
-            }
+            const cfg = STORE_MAP[storeName];
+            const { data: rows, error } = await window.sgeSupabase.from(cfg.table).select('*').order('id');
+            if (error) { console.error('Erro ao listar', storeName, error); return []; }
+            return (rows || []).map(cfg.fromDb);
         };
 
         const getDataByIndex = async (storeName, indexName, value) => {
-            const all = await getAllData(storeName);
-            return all.filter(item => item[indexName] === value);
+            const cfg = STORE_MAP[storeName];
+            const coluna = INDEX_MAP[indexName] || indexName;
+            const { data: rows, error } = await window.sgeSupabase.from(cfg.table).select('*').eq(coluna, value);
+            if (error) { console.error('Erro ao buscar por índice em', storeName, error); return []; }
+            return (rows || []).map(cfg.fromDb);
         };
 
         const getDataById = async (storeName, id) => {
-            try {
-                const r = await window.storage.get(storeKey(storeName, id), false);
-                return r ? JSON.parse(r.value) : undefined;
-            } catch (e) {
-                return undefined;
-            }
+            const cfg = STORE_MAP[storeName];
+            const { data: row, error } = await window.sgeSupabase.from(cfg.table).select('*').eq('id', id).maybeSingle();
+            if (error || !row) return undefined;
+            return cfg.fromDb(row);
         };
 
         const updateData = async (storeName, id, data) => {
-            const record = { ...data, id };
-            await window.storage.set(storeKey(storeName, id), JSON.stringify(record), false);
+            const cfg = STORE_MAP[storeName];
+            const { error } = await window.sgeSupabase.from(cfg.table).update(cfg.toDb(data)).eq('id', id);
+            if (error) { console.error('Erro ao atualizar', storeName, error); throw error; }
             return id;
         };
 
         const deleteData = async (storeName, id) => {
-            try {
-                await window.storage.delete(storeKey(storeName, id), false);
-            } catch (e) { /* já não existia */ }
+            const cfg = STORE_MAP[storeName];
+            const { error } = await window.sgeSupabase.from(cfg.table).delete().eq('id', id);
+            if (error) { console.error('Erro ao excluir em', storeName, error); throw error; }
             return id;
         };
 
         const clearStore = async (storeName) => {
-            const listing = await window.storage.list(storePrefix(storeName), false);
-            const keys = (listing && listing.keys) ? listing.keys : [];
-            for (const key of keys) {
-                try { await window.storage.delete(key, false); } catch (e) { /* ignora */ }
-            }
-            idCounters[storeName] = 1;
+            const cfg = STORE_MAP[storeName];
+            const { error } = await window.sgeSupabase.from(cfg.table).delete().gt('id', 0);
+            if (error) { console.error('Erro ao limpar', storeName, error); throw error; }
         };
+        
         
         // Funções específicas da aplicação
         const carregarFornecedores = async () => {
@@ -1762,6 +1829,11 @@
                     e.preventDefault();
                     
                     const id = document.getElementById('fornecedorId').value;
+
+                    if (id && !(await sgeConfirmar('Deseja salvar as alterações neste fornecedor?'))) {
+                        return;
+                    }
+
                     const fornecedor = {
                         nome: document.getElementById('fornecedorNome').value,
                         cidade: document.getElementById('fornecedorCidade').value,
@@ -1786,7 +1858,7 @@
                         await carregarFornecedores();
                     } catch (error) {
                         console.error('Erro ao salvar fornecedor:', error);
-                        alert('Erro ao salvar fornecedor.');
+                        alert('Erro ao salvar fornecedor: ' + sgeMensagemErro(error));
                     }
                 });
                 
@@ -1801,6 +1873,11 @@
                     e.preventDefault();
                     
                     const id = document.getElementById('produtoId').value;
+
+                    if (id && !(await sgeConfirmar('Deseja salvar as alterações neste produto do estoque?'))) {
+                        return;
+                    }
+
                     const produto = {
                         fornecedorId: parseInt(document.getElementById('produtoFornecedor').value),
                         nome: document.getElementById('produtoNome').value,
@@ -1827,7 +1904,7 @@
                         await carregarProdutos();
                     } catch (error) {
                         console.error('Erro ao salvar produto:', error);
-                        alert('Erro ao salvar produto.');
+                        alert('Erro ao salvar produto: ' + sgeMensagemErro(error));
                     }
                 });
                 
@@ -1896,6 +1973,11 @@
                     e.preventDefault();
                     
                     const id = document.getElementById('receitaId').value;
+
+                    if (id && !(await sgeConfirmar('Deseja salvar as alterações nesta receita?'))) {
+                        return;
+                    }
+
                     const pedidoVinculado = document.getElementById('receitaPedido').value || null;
                     const receita = {
                         pantone: document.getElementById('receitaPantone').value,
@@ -1983,7 +2065,7 @@
                         }
                     } catch (error) {
                         console.error('Erro ao salvar receita:', error);
-                        alert('Erro ao salvar receita.');
+                        alert('Erro ao salvar receita: ' + sgeMensagemErro(error));
                     }
                 });
                 
@@ -2055,14 +2137,14 @@
         };
         
         const excluirFornecedor = async (id) => {
-            if (confirm('Tem certeza que deseja excluir este fornecedor?')) {
+            if (await sgeConfirmar('Tem certeza que deseja excluir este fornecedor? Essa ação não pode ser desfeita.')) {
                 try {
                     await deleteData('fornecedores', parseInt(id));
                     alert('Fornecedor excluído com sucesso!');
                     await carregarFornecedores();
                 } catch (error) {
                     console.error('Erro ao excluir fornecedor:', error);
-                    alert('Erro ao excluir fornecedor.');
+                    alert('Erro ao excluir fornecedor: ' + sgeMensagemErro(error));
                 }
             }
         };
@@ -2088,14 +2170,14 @@
         };
         
         const excluirProduto = async (id) => {
-            if (confirm('Tem certeza que deseja excluir este produto?')) {
+            if (await sgeConfirmar('Tem certeza que deseja excluir este produto do estoque? Essa ação não pode ser desfeita.')) {
                 try {
                     await deleteData('produtos', parseInt(id));
                     alert('Produto excluído com sucesso!');
                     await carregarProdutos();
                 } catch (error) {
                     console.error('Erro ao excluir produto:', error);
-                    alert('Erro ao excluir produto.');
+                    alert('Erro ao excluir produto: ' + sgeMensagemErro(error));
                 }
             }
         };
@@ -2322,25 +2404,37 @@
                 try {
                     const data = JSON.parse(event.target.result);
 
-                    // Limpar dados existentes no banco do navegador
-                    for (const storeName of STORES) {
-                        await clearStore(storeName);
-                    }
+                    // Limpar dados existentes, na ordem que respeita as dependências entre tabelas
+                    await clearStore('materiasPrimas');
+                    await clearStore('receitas');
+                    await clearStore('produtos');
+                    await clearStore('fornecedores');
 
-                    // Adicionar novos dados, preservando os ids originais para manter os vínculos
-                    // entre fornecedor → produto → receita → matéria-prima
-                    for (const storeName of STORES) {
-                        if (data[storeName]) {
-                            for (const item of data[storeName]) {
-                                if (item.id !== undefined && item.id !== null) {
-                                    await window.storage.set(storeKey(storeName, item.id), JSON.stringify(item), false);
-                                } else {
-                                    await addData(storeName, item);
-                                }
-                            }
-                            const all = await getAllData(storeName);
-                            idCounters[storeName] = all.reduce((max, i) => Math.max(max, i.id || 0), 0) + 1;
-                        }
+                    // O Postgres gera ids novos automaticamente — mapeamos os ids antigos
+                    // do arquivo para os novos ids, preservando os vínculos entre
+                    // fornecedor → produto → receita → matéria-prima.
+                    const mapaFornecedores = {};
+                    const mapaProdutos = {};
+                    const mapaReceitas = {};
+
+                    for (const item of (data.fornecedores || [])) {
+                        mapaFornecedores[item.id] = await addData('fornecedores', item);
+                    }
+                    for (const item of (data.produtos || [])) {
+                        mapaProdutos[item.id] = await addData('produtos', {
+                            ...item,
+                            fornecedorId: mapaFornecedores[item.fornecedorId] ?? item.fornecedorId
+                        });
+                    }
+                    for (const item of (data.receitas || [])) {
+                        mapaReceitas[item.id] = await addData('receitas', item);
+                    }
+                    for (const item of (data.materiasPrimas || [])) {
+                        await addData('materiasPrimas', {
+                            ...item,
+                            receitaId: mapaReceitas[item.receitaId] ?? item.receitaId,
+                            produtoId: mapaProdutos[item.produtoId] ?? item.produtoId
+                        });
                     }
 
                     alert('Dados importados com sucesso!');
@@ -2349,7 +2443,7 @@
                     await carregarReceitas();
                 } catch (error) {
                     console.error('Erro ao importar dados:', error);
-                    alert('Erro ao importar dados. Verifique o formato do arquivo.');
+                    alert('Erro ao importar dados: ' + sgeMensagemErro(error));
                 }
             };
             reader.readAsText(file);
@@ -2765,7 +2859,7 @@
         };
         
         const excluirReceita = async (id) => {
-            if (confirm('Tem certeza que deseja excluir esta receita?')) {
+            if (await sgeConfirmar('Tem certeza que deseja excluir esta receita e as matérias-primas/coloração associadas? Essa ação não pode ser desfeita.')) {
                 try {
                     // Primeiro excluir as matérias-primas associadas
                     const materiasPrimas = await getDataByIndex('materiasPrimas', 'receitaId', parseInt(id));
@@ -2785,7 +2879,7 @@
                     }
                 } catch (error) {
                     console.error('Erro ao excluir receita:', error);
-                    alert('Erro ao excluir receita.');
+                    alert('Erro ao excluir receita: ' + sgeMensagemErro(error));
                 }
             }
         };
