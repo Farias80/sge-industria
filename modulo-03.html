@@ -1978,6 +1978,13 @@
                         return;
                     }
 
+                    // Regra: toda receita precisa estar ligada a pelo menos um produto do
+                    // estoque (matéria-prima ou coloração). Sem isso, não deixa salvar.
+                    if (mpEntries.length === 0 && corEntries.length === 0) {
+                        alert('Adicione pelo menos uma matéria-prima ou coloração do estoque antes de salvar a receita.');
+                        return;
+                    }
+
                     const pedidoVinculado = document.getElementById('receitaPedido').value || null;
                     const receita = {
                         pantone: document.getElementById('receitaPantone').value,
