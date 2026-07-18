@@ -736,6 +736,34 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
   }
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/supabase-client.js"></script>
+<script>
+(async function(){
+  await sgeRequireLogin();
+  await sgeMontarBarraUsuario();
+
+  const podeEditar = await sgePodeEditar('arte');
+  window.__sgePodeEditarArte = podeEditar;
+  if(!podeEditar){
+    document.body.classList.add('sge-readonly');
+    const style = document.createElement('style');
+    style.textContent = `
+      body.sge-readonly #btnSave, body.sge-readonly .recent-item-excluir,
+      body.sge-readonly .search-result-excluir {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const aviso = document.createElement('div');
+    aviso.setAttribute('role', 'status');
+    aviso.style.cssText = 'position:sticky;top:0;z-index:9997;background:#EEECFD;color:#1C2A5E;border-bottom:1px solid #D9D4FB;padding:9px 16px;font:600 12.5px/1.4 Inter,system-ui,sans-serif;text-align:center;';
+    aviso.textContent = 'Modo somente leitura — você pode visualizar e imprimir. Peça ao Administrador para liberar edição do setor Artes.';
+    document.body.prepend(aviso);
+  }
+})();
+</script>
 <script>
 (function(){
   "use strict";
@@ -1097,22 +1125,26 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     }
     state.reference = ref;
     try{
-      await window.storage.set('ficha:' + ref, JSON.stringify(state), false);
-      await window.storage.set('ficha_meta:' + ref, JSON.stringify({ savedAt: nowIso() }), false);
+      const { data: existente } = await window.sgeSupabase.from('fichas').select('id').eq('referencia', ref).maybeSingle();
+      if(existente && !(await sgeConfirmar('Já existe uma ficha salva com a referência "' + ref + '". Deseja sobrescrever com as alterações atuais?'))){
+        return;
+      }
+      const { error } = await window.sgeSupabase.from('fichas').upsert({ referencia: ref, dados: state }, { onConflict: 'referencia' });
+      if(error) throw error;
       showToast('Ficha ' + ref + ' salva com sucesso');
       refreshRecentList();
     }catch(err){
       console.error(err);
-      showToast('Não foi possível salvar. Tente novamente.');
+      showToast('Não foi possível salvar: ' + sgeMensagemErro(err));
     }
   }
 
   async function loadFichaByRef(ref){
     if(!ref){ showToast('Informe uma referência para carregar'); return false; }
     try{
-      const result = await window.storage.get('ficha:' + ref);
-      if(!result){ showToast('Nenhuma ficha encontrada para ' + ref); return false; }
-      const loaded = JSON.parse(result.value);
+      const { data: row, error } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', ref).maybeSingle();
+      if(error || !row){ showToast('Nenhuma ficha encontrada para ' + ref); return false; }
+      const loaded = row.dados;
       state = Object.assign({ reference:'', estampas:[makeEstampa()], tagless:{image:null,addedAt:null,technique:'tampografia',description:'',pantones:[makePantone()]}, observacoes:'' }, loaded);
       if(!state.estampas || state.estampas.length === 0) state.estampas = [makeEstampa()];
       state.estampas.forEach(e => { if(e.application === undefined) e.application=''; if(e.applicationDescription === undefined) e.applicationDescription=''; if(e.addedAt === undefined) e.addedAt=null; e.pantones.forEach(p => { if(p.fabric === undefined) p.fabric=''; }); });
@@ -1153,24 +1185,14 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
 
   async function refreshRecentList(){
     try{
-      const listing = await window.storage.list('ficha_meta:');
-      const keys = (listing && listing.keys) ? listing.keys : [];
-      if(keys.length === 0){
+      const { data: rows, error } = await window.sgeSupabase.from('fichas').select('referencia, atualizado_em').order('atualizado_em', { ascending: false }).limit(4);
+      if(error) throw error;
+      if(!rows || rows.length === 0){
         recentList.innerHTML = '<div class="recent-empty">Nenhuma ficha salva ainda.</div>';
         return;
       }
-      const items = [];
-      for(const key of keys){
-        try{
-          const r = await window.storage.get(key, false);
-          if(r){
-            const meta = JSON.parse(r.value);
-            items.push({ ref: key.replace('ficha_meta:',''), savedAt: meta.savedAt });
-          }
-        }catch(e){ /* ignore missing */ }
-      }
-      items.sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
-      renderRecentList(items.slice(0,4));
+      const items = rows.map(r => ({ ref: r.referencia, savedAt: r.atualizado_em }));
+      renderRecentList(items);
     }catch(err){
       recentList.innerHTML = '<div class="recent-empty">Nenhuma ficha salva ainda.</div>';
     }
@@ -1191,8 +1213,21 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
           <div class="recent-item-meta">${item.savedAt ? 'Salva em ' + fmtDateTime(item.savedAt) : ''}</div>
         </div>
         <button class="recent-item-open" type="button">Abrir</button>
+        <button class="recent-item-excluir" type="button" title="Excluir ficha" style="background:none;border:none;color:#DC3630;cursor:pointer;font-weight:700;font-size:12px;margin-left:6px;">Excluir</button>
       `;
       el.querySelector('.recent-item-open').addEventListener('click', () => loadFichaByRef(item.ref));
+      el.querySelector('.recent-item-excluir').addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        if(!(await sgeConfirmar('Tem certeza que deseja excluir a ficha "' + item.ref + '"? Essa ação não pode ser desfeita.'))) return;
+        try{
+          const { error } = await window.sgeSupabase.from('fichas').delete().eq('referencia', item.ref);
+          if(error) throw error;
+          showToast('Ficha ' + item.ref + ' excluída');
+          refreshRecentList();
+        }catch(err){
+          showToast('Não foi possível excluir: ' + sgeMensagemErro(err));
+        }
+      });
       recentList.appendChild(el);
     });
   }
@@ -1266,17 +1301,9 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     resultsEl.innerHTML = '<div class="search-loading">Buscando fichas salvas...</div>';
 
     try{
-      const listing = await window.storage.list('ficha:');
-      const keys = (listing && listing.keys) ? listing.keys.filter(k => !k.startsWith('ficha_meta:')) : [];
-      const matches = [];
-      for(const key of keys){
-        try{
-          const r = await window.storage.get(key, false);
-          if(!r) continue;
-          const f = JSON.parse(r.value);
-          if(fichaMatches(f, filters)) matches.push(f);
-        }catch(e){ /* skip broken entry */ }
-      }
+      const { data: rows, error } = await window.sgeSupabase.from('fichas').select('dados');
+      if(error) throw error;
+      const matches = (rows || []).map(r => r.dados).filter(f => f && fichaMatches(f, filters));
       renderSearchResults(matches);
     }catch(err){
       resultsEl.innerHTML = '<div class="search-empty-state">Não foi possível buscar agora. Tente novamente.</div>';
@@ -1305,10 +1332,23 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
           <div class="search-result-tags">${tags.map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>
         </div>
         <button class="recent-item-open" type="button">Abrir</button>
+        <button class="search-result-excluir" type="button" title="Excluir ficha" style="background:none;border:none;color:#DC3630;cursor:pointer;font-weight:700;font-size:12px;margin-left:6px;">Excluir</button>
       `;
       item.querySelector('.recent-item-open').addEventListener('click', async () => {
         const ok = await loadFichaByRef(f.reference);
         if(ok) closeSearch();
+      });
+      item.querySelector('.search-result-excluir').addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        if(!(await sgeConfirmar('Tem certeza que deseja excluir a ficha "' + f.reference + '"? Essa ação não pode ser desfeita.'))) return;
+        try{
+          const { error } = await window.sgeSupabase.from('fichas').delete().eq('referencia', f.reference);
+          if(error) throw error;
+          runSearch();
+          refreshRecentList();
+        }catch(err){
+          alert('Não foi possível excluir: ' + sgeMensagemErro(err));
+        }
       });
       resultsEl.appendChild(item);
     });

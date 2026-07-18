@@ -1598,8 +1598,8 @@
                 return;
             }
             try {
-                const r = await window.storage.get('ficha:' + referencia, false);
-                fichaVinculadaReceita = r ? JSON.parse(r.value) : null;
+                const { data: row } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', referencia).maybeSingle();
+                fichaVinculadaReceita = row ? row.dados : null;
             } catch (e) {
                 fichaVinculadaReceita = null;
             }
