@@ -810,6 +810,34 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
   }
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/supabase-client.js"></script>
+<script>
+(async function(){
+  await sgeRequireLogin();
+  await sgeMontarBarraUsuario();
+
+  const podeEditar = await sgePodeEditar('estamparia');
+  window.__sgePodeEditarEstamparia = podeEditar;
+  if(!podeEditar){
+    document.body.classList.add('sge-readonly');
+    const style = document.createElement('style');
+    style.textContent = `
+      body.sge-readonly #btnSave, body.sge-readonly .pedido-excluir,
+      body.sge-readonly .search-result-excluir {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const aviso = document.createElement('div');
+    aviso.setAttribute('role', 'status');
+    aviso.style.cssText = 'position:sticky;top:0;z-index:9997;background:#EEECFD;color:#1C2A5E;border-bottom:1px solid #D9D4FB;padding:9px 16px;font:600 12.5px/1.4 Inter,system-ui,sans-serif;text-align:center;';
+    aviso.textContent = 'Modo somente leitura — você pode visualizar e imprimir. Peça ao Administrador para liberar edição do setor Estamparia.';
+    document.body.prepend(aviso);
+  }
+})();
+</script>
 <script>
 (function(){
   "use strict";
@@ -1002,8 +1030,8 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
   async function carregarFichaDoModulo01(ref){
     if(!ref){ fichaAtual = null; fichaStatus = 'empty'; renderRefStatus(); renderFichaPreview(); return; }
     try{
-      const result = await window.storage.get('ficha:' + ref);
-      fichaAtual = result ? JSON.parse(result.value) : null;
+      const { data: row } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', ref).maybeSingle();
+      fichaAtual = row ? row.dados : null;
       fichaStatus = fichaAtual ? 'found' : 'notfound';
     }catch(err){
       fichaAtual = null;
@@ -1082,26 +1110,54 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     if(!dados.referencia){ showToast('Informe uma referência antes de salvar'); return; }
     if(!dados.pedido){ showToast('Informe o número do pedido antes de salvar'); return; }
     if(dados.ordens.length === 0){ showToast('Adicione ao menos uma ordem de produção'); return; }
-    dados.savedAt = nowIso();
-    pedidoState = dados;
     try{
-      await window.storage.set('pedido:' + dados.pedido, JSON.stringify(dados), false);
-      await window.storage.set('pedido_meta:' + dados.pedido, JSON.stringify({ referencia: dados.referencia, status: dados.status, savedAt: nowIso() }), false);
+      const { data: existente } = await window.sgeSupabase.from('pedidos').select('id').eq('numero', dados.pedido).maybeSingle();
+      if(existente && !(await sgeConfirmar('Já existe um pedido salvo com o número "' + dados.pedido + '". Deseja sobrescrever com as alterações atuais?'))){
+        return;
+      }
+
+      const { data: pedidoRow, error: errPedido } = await window.sgeSupabase.from('pedidos').upsert({
+        numero: dados.pedido,
+        referencia: dados.referencia,
+        status: dados.status,
+        observacoes: dados.observacoes
+      }, { onConflict: 'numero' }).select().single();
+      if(errPedido) throw errPedido;
+
+      // Substitui as ordens de produção pela lista atual
+      await window.sgeSupabase.from('ordens_producao').delete().eq('pedido_id', pedidoRow.id);
+      if(dados.ordens.length){
+        const { error: errOrdens } = await window.sgeSupabase.from('ordens_producao').insert(
+          dados.ordens.map((o, i) => ({ pedido_id: pedidoRow.id, numero: o.numero, quantidade: o.quantidade || 0, ordem: i }))
+        );
+        if(errOrdens) throw errOrdens;
+      }
+
+      dados.savedAt = pedidoRow.atualizado_em;
+      pedidoState = dados;
       showToast('Pedido ' + dados.pedido + ' salvo com sucesso');
       renderStatusBadge();
       refreshPedidosTable();
     }catch(err){
       console.error(err);
-      showToast('Não foi possível salvar. Tente novamente.');
+      showToast('Não foi possível salvar: ' + sgeMensagemErro(err));
     }
   }
 
   async function loadPedidoByNumero(pedido){
     if(!pedido){ showToast('Informe um número de pedido para carregar'); return false; }
     try{
-      const result = await window.storage.get('pedido:' + pedido);
-      if(!result){ showToast('Nenhum pedido encontrado para ' + pedido); return false; }
-      const loaded = JSON.parse(result.value);
+      const { data: pedidoRow, error } = await window.sgeSupabase.from('pedidos').select('*, ordens_producao(numero, quantidade, ordem)').eq('numero', pedido).maybeSingle();
+      if(error || !pedidoRow){ showToast('Nenhum pedido encontrado para ' + pedido); return false; }
+      const ordensOrdenadas = (pedidoRow.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0));
+      const loaded = {
+        referencia: pedidoRow.referencia,
+        pedido: pedidoRow.numero,
+        ordens: ordensOrdenadas.map(o => ({ numero: o.numero, quantidade: o.quantidade })),
+        observacoes: pedidoRow.observacoes,
+        status: pedidoRow.status,
+        savedAt: pedidoRow.atualizado_em
+      };
       pedidoState = Object.assign({ referencia:'', pedido:'', ordens:[makeOrdem()], observacoes:'', status:'pendente' }, loaded);
       if(!pedidoState.ordens || pedidoState.ordens.length === 0) pedidoState.ordens = [makeOrdem()];
       pedidoState.ordens = pedidoState.ordens.map(o => ({ id: uid(), numero:o.numero||'', quantidade:o.quantidade!==undefined?o.quantidade:'' }));
@@ -1134,17 +1190,15 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
 
   async function refreshPedidosTable(){
     try{
-      const listing = await window.storage.list('pedido:');
-      const keys = (listing && listing.keys) ? listing.keys.filter(k => !k.startsWith('pedido_meta:')) : [];
-      const items = [];
-      for(const key of keys){
-        try{
-          const r = await window.storage.get(key, false);
-          if(r) items.push(JSON.parse(r.value));
-        }catch(e){ /* ignora item corrompido */ }
-      }
-      items.sort((a,b) => (b.pedido||'').localeCompare(a.pedido||''));
-      pedidosCache = items;
+      const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('*, ordens_producao(numero, quantidade, ordem)').order('numero', { ascending: false });
+      if(error) throw error;
+      pedidosCache = (rows || []).map(p => ({
+        pedido: p.numero,
+        referencia: p.referencia,
+        status: p.status,
+        savedAt: p.atualizado_em,
+        ordens: (p.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0))
+      }));
     }catch(err){
       pedidosCache = [];
     }
@@ -1184,12 +1238,29 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
           <td>${qtdTotal || '—'}</td>
           <td><span class="status-badge ${status}">${statusLabel(status)}</span></td>
           <td class="ops-cell">${savedAtCell}</td>
-          <td><button class="table-open-btn" type="button" data-pedido="${escapeHtml(p.pedido)}">Abrir</button></td>
+          <td>
+            <button class="table-open-btn" type="button" data-pedido="${escapeHtml(p.pedido)}">Abrir</button>
+            <button class="pedido-excluir" type="button" data-pedido="${escapeHtml(p.pedido)}" title="Excluir pedido" style="background:none;border:none;color:#DC3630;cursor:pointer;font-weight:700;font-size:12px;margin-left:6px;">Excluir</button>
+          </td>
         </tr>
       `;
     }).join('');
     pedidosTableBody.querySelectorAll('.table-open-btn').forEach(btn => {
       btn.addEventListener('click', () => loadPedidoByNumero(btn.getAttribute('data-pedido')));
+    });
+    pedidosTableBody.querySelectorAll('.pedido-excluir').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const numero = btn.getAttribute('data-pedido');
+        if(!(await sgeConfirmar('Tem certeza que deseja excluir o pedido "' + numero + '" e suas ordens de produção? Essa ação não pode ser desfeita.'))) return;
+        try{
+          const { error } = await window.sgeSupabase.from('pedidos').delete().eq('numero', numero);
+          if(error) throw error;
+          showToast('Pedido ' + numero + ' excluído');
+          refreshPedidosTable();
+        }catch(err){
+          showToast('Não foi possível excluir: ' + sgeMensagemErro(err));
+        }
+      });
     });
   }
 
@@ -1253,17 +1324,13 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     resultsEl.innerHTML = '<div class="search-loading">Buscando pedidos salvos...</div>';
 
     try{
-      const listing = await window.storage.list('pedido:');
-      const keys = (listing && listing.keys) ? listing.keys.filter(k => !k.startsWith('pedido_meta:')) : [];
-      const matches = [];
-      for(const key of keys){
-        try{
-          const r = await window.storage.get(key, false);
-          if(!r) continue;
-          const p = JSON.parse(r.value);
-          if(pedidoMatches(p, filters)) matches.push(p);
-        }catch(e){ /* ignora item corrompido */ }
-      }
+      const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('*, ordens_producao(numero, quantidade, ordem)');
+      if(error) throw error;
+      const items = (rows || []).map(p => ({
+        pedido: p.numero, referencia: p.referencia, status: p.status,
+        ordens: (p.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0))
+      }));
+      const matches = items.filter(p => pedidoMatches(p, filters));
       renderSearchResults(matches);
     }catch(err){
       resultsEl.innerHTML = '<div class="search-empty-state">Não foi possível buscar agora. Tente novamente.</div>';
@@ -1288,10 +1355,23 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
           <div class="search-result-tags">${ops.map(o => `<span class="tag-chip">${escapeHtml(o)}</span>`).join('')}</div>
         </div>
         <button class="recent-item-open" type="button">Abrir</button>
+        <button class="search-result-excluir" type="button" title="Excluir pedido" style="background:none;border:none;color:#DC3630;cursor:pointer;font-weight:700;font-size:12px;margin-left:6px;">Excluir</button>
       `;
       item.querySelector('.recent-item-open').addEventListener('click', async () => {
         const ok = await loadPedidoByNumero(p.pedido);
         if(ok) closeSearch();
+      });
+      item.querySelector('.search-result-excluir').addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        if(!(await sgeConfirmar('Tem certeza que deseja excluir o pedido "' + p.pedido + '"? Essa ação não pode ser desfeita.'))) return;
+        try{
+          const { error } = await window.sgeSupabase.from('pedidos').delete().eq('numero', p.pedido);
+          if(error) throw error;
+          runSearch();
+          refreshPedidosTable();
+        }catch(err){
+          alert('Não foi possível excluir: ' + sgeMensagemErro(err));
+        }
       });
       resultsEl.appendChild(item);
     });

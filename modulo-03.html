@@ -1524,21 +1524,14 @@
         };
         
         // ===== Integração com o Módulo 02 · Estamparia (campo Pedido da Receita) =====
-        // Os pedidos são salvos pelo Módulo 02 sob as chaves 'pedido:<numero>' no mesmo
-        // banco do navegador — aqui apenas lemos essas chaves para popular o seletor.
+        // Os pedidos agora vêm da tabela `pedidos` do Supabase (o Módulo 02 já foi migrado).
         let pedidosDisponiveis = []; // cache dos pedidos do Módulo 02
 
         const carregarPedidosDoModulo02 = async () => {
             try {
-                const listing = await window.storage.list('pedido:', false);
-                const keys = (listing && listing.keys) ? listing.keys.filter(k => !k.startsWith('pedido_meta:')) : [];
-                const items = [];
-                for (const key of keys) {
-                    try {
-                        const r = await window.storage.get(key, false);
-                        if (r) items.push(JSON.parse(r.value));
-                    } catch (e) { /* ignora item corrompido */ }
-                }
+                const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('numero, referencia, status');
+                if (error) throw error;
+                const items = (rows || []).map(r => ({ pedido: r.numero, referencia: r.referencia, status: r.status }));
                 items.sort((a, b) => (a.status === 'concluida') - (b.status === 'concluida') || (b.pedido||'').localeCompare(a.pedido||''));
                 pedidosDisponiveis = items;
             } catch (e) {
@@ -1674,23 +1667,14 @@
         document.getElementById('receitaPantone').addEventListener('input', atualizarPantoneChipsUsados);
 
         // Marca o pedido do Módulo 02 como concluído quando uma receita é salva vinculada a ele
+        // Observação: isso grava na tabela `pedidos`, que pertence ao setor "estamparia" — só
+        // funciona se quem estiver logado tiver permissão de edição nesse setor (ou for admin).
         const marcarPedidoConcluido = async (numeroPedido) => {
             if (!numeroPedido) return;
             try {
-                const r = await window.storage.get('pedido:' + numeroPedido, false);
-                if (!r) return;
-                const pedido = JSON.parse(r.value);
-                if (pedido.status === 'concluida') return;
-                pedido.status = 'concluida';
-                await window.storage.set('pedido:' + numeroPedido, JSON.stringify(pedido), false);
-                let meta = {};
-                try {
-                    const metaR = await window.storage.get('pedido_meta:' + numeroPedido, false);
-                    if (metaR) meta = JSON.parse(metaR.value);
-                } catch (e) { /* meta pode não existir */ }
-                meta.status = 'concluida';
-                meta.referencia = pedido.referencia;
-                await window.storage.set('pedido_meta:' + numeroPedido, JSON.stringify(meta), false);
+                const { data: pedido } = await window.sgeSupabase.from('pedidos').select('id, status').eq('numero', numeroPedido).maybeSingle();
+                if (!pedido || pedido.status === 'concluida') return;
+                await window.sgeSupabase.from('pedidos').update({ status: 'concluida' }).eq('id', pedido.id);
                 await carregarPedidosDoModulo02();
             } catch (e) {
                 console.error('Erro ao marcar pedido como concluído:', e);
