@@ -1189,7 +1189,7 @@
             fornecedores: {
                 table: 'fornecedores',
                 toDb: (o) => ({ nome: o.nome, cidade: o.cidade, estado: o.estado, contato: o.contato, email: o.email }),
-                fromDb: (r) => ({ id: r.id, nome: r.nome, cidade: r.cidade, estado: r.estado, contato: r.contato, email: r.email })
+                fromDb: (r) => ({ id: Number(r.id), nome: r.nome, cidade: r.cidade, estado: r.estado, contato: r.contato, email: r.email })
             },
             produtos: {
                 table: 'produtos',
@@ -1201,7 +1201,7 @@
                     quantidade: isNaN(parseFloat(o.quantidade)) ? 0 : parseFloat(o.quantidade)
                 }),
                 fromDb: (r) => ({
-                    id: r.id, fornecedorId: r.fornecedor_id, nome: r.nome, lote: r.lote,
+                    id: Number(r.id), fornecedorId: r.fornecedor_id == null ? null : Number(r.fornecedor_id), nome: r.nome, lote: r.lote,
                     dataFabricacao: r.data_fabricacao, quantidade: Number(r.quantidade),
                     dataCadastro: r.data_cadastro
                 })
@@ -1218,7 +1218,7 @@
                     pedido_numero: o.pedido || null
                 }),
                 fromDb: (r) => ({
-                    id: r.id, pantone: r.pantone, estampaOrigem: r.estampa_origem, referencia: r.referencia,
+                    id: Number(r.id), pantone: r.pantone, estampaOrigem: r.estampa_origem, referencia: r.referencia,
                     tipo: r.tipo, amostraPedido: r.amostra_pedido, op: r.op, pedido: r.pedido_numero,
                     dataCadastro: r.criado_em
                 })
@@ -1233,7 +1233,7 @@
                     categoria: o.grupo === 'coloracao' ? 'coloracao' : 'materia_prima'
                 }),
                 fromDb: (r) => ({
-                    id: r.id, receitaId: r.receita_id, produtoId: r.produto_id, quantidade: Number(r.quantidade),
+                    id: Number(r.id), receitaId: Number(r.receita_id), produtoId: Number(r.produto_id), quantidade: Number(r.quantidade),
                     tipo: r.tipo || '', grupo: r.categoria === 'coloracao' ? 'coloracao' : 'materiaPrima',
                     dataCadastro: r.criado_em
                 })
