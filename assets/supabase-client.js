@@ -9,6 +9,11 @@
 const SGE_SUPABASE_URL = 'https://uqxyogatphxpwszyryac.supabase.co';
 const SGE_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHlvZ2F0cGh4cHdzenlyeWFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4ODg0MzEsImV4cCI6MjA5OTQ2NDQzMX0.UIBuMvI54lVVu-ncEjTzGn-RIz2OwjBM7eqAYe9bdbo';
 
+if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+  console.error('[SGE] A biblioteca do Supabase (supabase-js) não carregou. Verifique se o <script> da CDN está ANTES de assets/supabase-client.js na página, e se a internet/CDN não está bloqueada.');
+  alert('Não foi possível carregar a conexão com o banco de dados (Supabase). Recarregue a página; se o problema continuar, avise o administrador.');
+}
+
 window.sgeSupabase = window.supabase.createClient(SGE_SUPABASE_URL, SGE_SUPABASE_ANON_KEY);
 
 /* ---------------- Sessão / autenticação ---------------- */
