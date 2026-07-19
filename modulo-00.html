@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SGE · Módulo 00 · Início</title>
+<link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
@@ -42,6 +45,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
   background-size:14px 14px, auto;
   color:#fff;padding:30px 28px;display:flex;align-items:center;justify-content:center;
   border-bottom:1px solid rgba(255,255,255,.08);
+  min-height:92px;box-sizing:border-box;
 }
 .topbar h1{
   margin:0;font-weight:800;font-size:30px;letter-spacing:.01em;
@@ -111,6 +115,7 @@ main{
   color:#fff;position:relative;z-index:1;
 }
 .module-icon svg{width:44px;height:44px;}
+.module-icon img{width:44px;height:44px;object-fit:contain;filter:brightness(0) invert(1);}
 .module-label{
   font-family:'Sora',sans-serif;font-weight:700;font-size:16px;position:relative;z-index:1;
 }
@@ -159,10 +164,7 @@ footer a:hover{color:var(--indigo-600);border-color:var(--indigo-600);}
 
       <button class="module-btn" onclick="window.location.href='modulo-01.html'">
         <span class="module-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20.5 3.5 9 15l-5 1 1-5L16.5 0.5z" transform="translate(0,2)"/>
-            <path d="M12 19h9"/>
-          </svg>
+          <img src="assets/icons/artes.png" alt="Artes">
         </span>
         <span class="module-label">Artes</span>
         <span class="module-sub">Preparação das artes</span>
@@ -170,11 +172,7 @@ footer a:hover{color:var(--indigo-600);border-color:var(--indigo-600);}
 
       <button class="module-btn" onclick="window.location.href='modulo-02.html'">
         <span class="module-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="14" height="17" rx="2"/>
-            <path d="M7 8h6M7 12h6M7 16h4"/>
-            <path d="M17 6l4 1.2v14L17 20"/>
-          </svg>
+          <img src="assets/icons/estamparia.png" alt="Estamparia">
         </span>
         <span class="module-label">Estamparia</span>
         <span class="module-sub">Serviço de estamparia</span>
@@ -182,11 +180,7 @@ footer a:hover{color:var(--indigo-600);border-color:var(--indigo-600);}
 
       <button class="module-btn" onclick="window.location.href='modulo-03.html'">
         <span class="module-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10 2v6.2L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 8.2V2"/>
-            <path d="M9 2h6"/>
-            <path d="M7.5 15h9"/>
-          </svg>
+          <img src="assets/icons/laboratorio-tinta.png" alt="Laboratório de Tinta">
         </span>
         <span class="module-label">Laboratório de Tinta</span>
         <span class="module-sub">Fornecedores, receitas e estoque</span>
@@ -194,10 +188,7 @@ footer a:hover{color:var(--indigo-600);border-color:var(--indigo-600);}
 
       <button class="module-btn" onclick="window.location.href='modulo-04.html'">
         <span class="module-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/>
-            <path d="m9 12 2 2 4-4"/>
-          </svg>
+          <img src="assets/icons/qualidade.png" alt="Qualidade">
         </span>
         <span class="module-label">Qualidade</span>
         <span class="module-sub">Teste e durabilidade</span>
