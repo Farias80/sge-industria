@@ -1517,6 +1517,8 @@
         };
         
         // Funções auxiliares
+        const fmtEstoque = (n) => (Number(n) || 0).toFixed(2);
+
         const formatarData = (dataString) => {
             if (!dataString) return 'N/A';
             const data = new Date(dataString);
@@ -1913,6 +1915,20 @@
                     const produto = await getDataById('produtos', produtoId);
                     const fornecedor = await getDataById('fornecedores', produto.fornecedorId);
 
+                    // Regra: não deixa usar mais do que existe no estoque (nem produto zerado)
+                    const jaUsadoNestaReceita = mpEntries
+                        .filter(e => e.produtoId === produtoId)
+                        .reduce((s, e) => s + (parseFloat(e.quantidade) || 0), 0);
+                    const disponivel = (produto.quantidade || 0) - jaUsadoNestaReceita;
+                    if (disponivel <= 0) {
+                        alert('Este produto está sem estoque disponível (' + fmtEstoque(produto.quantidade) + ' kg cadastrado). Cadastre entrada de estoque antes de usar nesta receita.');
+                        return;
+                    }
+                    if (quantidade && quantidade > disponivel) {
+                        alert('Estoque insuficiente: disponível ' + fmtEstoque(disponivel) + ' kg, mas foi solicitado ' + fmtEstoque(quantidade) + ' kg.');
+                        return;
+                    }
+
                     mpEntries.push({
                         produtoId,
                         produtoNome: produto.nome,
@@ -1937,6 +1953,20 @@
                     const quantidade = parseFloat(document.getElementById('corQtd').value);
                     const produto = await getDataById('produtos', produtoId);
                     const fornecedor = await getDataById('fornecedores', produto.fornecedorId);
+
+                    // Regra: não deixa usar mais do que existe no estoque (nem produto zerado)
+                    const jaUsadoNestaReceita = corEntries
+                        .filter(e => e.produtoId === produtoId)
+                        .reduce((s, e) => s + (parseFloat(e.quantidade) || 0), 0);
+                    const disponivel = (produto.quantidade || 0) - jaUsadoNestaReceita;
+                    if (disponivel <= 0) {
+                        alert('Este produto está sem estoque disponível (' + fmtEstoque(produto.quantidade) + ' kg cadastrado). Cadastre entrada de estoque antes de usar nesta receita.');
+                        return;
+                    }
+                    if (quantidade && quantidade > disponivel) {
+                        alert('Estoque insuficiente: disponível ' + fmtEstoque(disponivel) + ' kg, mas foi solicitado ' + fmtEstoque(quantidade) + ' kg.');
+                        return;
+                    }
 
                     corEntries.push({
                         produtoId,
@@ -1983,15 +2013,57 @@
                     
                     try {
                         let receitaId;
+
+                        const todasEntradas = [
+                            ...mpEntries.map(entrada => ({ ...entrada, grupo: 'materiaPrima' })),
+                            ...corEntries.map(entrada => ({ ...entrada, grupo: 'coloracao' }))
+                        ];
+
+                        // Se estiver editando, o que esta receita já usa hoje conta como "disponível"
+                        // de novo (porque vamos devolver ao estoque antes de regravar).
+                        let reservaAtualPorProduto = {};
+                        if (id) {
+                            const materiasAntigas = await getDataByIndex('materiasPrimas', 'receitaId', parseInt(id));
+                            materiasAntigas.forEach(m => {
+                                reservaAtualPorProduto[m.produtoId] = (reservaAtualPorProduto[m.produtoId] || 0) + (m.quantidade || 0);
+                            });
+                        }
+
+                        // Checagem de estoque ANTES de gravar qualquer coisa — evita deixar a
+                        // receita "pela metade" no banco se faltar estoque para algum item.
+                        const quantidadeTotalPorProduto = {};
+                        todasEntradas.forEach(entrada => {
+                            const qtd = parseFloat(entrada.quantidade) || 0;
+                            quantidadeTotalPorProduto[entrada.produtoId] = (quantidadeTotalPorProduto[entrada.produtoId] || 0) + qtd;
+                        });
+                        for (const produtoIdStr of Object.keys(quantidadeTotalPorProduto)) {
+                            const pid = parseInt(produtoIdStr);
+                            const produtoAtual = await getDataById('produtos', pid);
+                            const necessario = quantidadeTotalPorProduto[produtoIdStr];
+                            const disponivel = (produtoAtual ? (produtoAtual.quantidade || 0) : 0) + (reservaAtualPorProduto[pid] || 0);
+                            if (!produtoAtual || disponivel < necessario) {
+                                alert('Não é possível salvar: o produto "' + (produtoAtual ? produtoAtual.nome : 'selecionado') + '" não tem estoque suficiente (disponível: ' + fmtEstoque(disponivel) + ' kg, necessário: ' + fmtEstoque(necessario) + ' kg). Ajuste a receita ou registre entrada de estoque antes de salvar.');
+                                return;
+                            }
+                        }
                         
                         if (id) {
                             // Edição
                             receitaId = parseInt(id);
                             await updateData('receitas', receitaId, receita);
                             
-                            // Remover matérias-primas antigas
+                            // Antes de remover as matérias-primas antigas, devolve ao estoque a
+                            // quantidade que elas haviam consumido — senão editar a mesma receita
+                            // repetidas vezes descontaria o estoque várias vezes para os mesmos itens.
                             const materiasAntigas = await getDataByIndex('materiasPrimas', 'receitaId', receitaId);
                             for (const materia of materiasAntigas) {
+                                const produtoAntigo = await getDataById('produtos', materia.produtoId);
+                                if (produtoAntigo) {
+                                    await updateData('produtos', produtoAntigo.id, {
+                                        ...produtoAntigo,
+                                        quantidade: (produtoAntigo.quantidade || 0) + (materia.quantidade || 0)
+                                    });
+                                }
                                 await deleteData('materiasPrimas', materia.id);
                             }
                             
@@ -2002,12 +2074,6 @@
                             receitaId = await addData('receitas', receita);
                             alert('Receita cadastrada com sucesso!');
                         }
-                        
-                        // Salvar as matérias-primas e as colorações
-                        const todasEntradas = [
-                            ...mpEntries.map(entrada => ({ ...entrada, grupo: 'materiaPrima' })),
-                            ...corEntries.map(entrada => ({ ...entrada, grupo: 'coloracao' }))
-                        ];
 
                         for (const entrada of todasEntradas) {
                             const quantidade = parseFloat(entrada.quantidade) || 0;
