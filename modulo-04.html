@@ -345,13 +345,7 @@ footer.appfoot{text-align:center;color:var(--text-muted);font-size:11px;padding:
     </div>
 
     <div class="card compact">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg>Gestão de Responsáveis Técnicos</h3>
-      <div class="resp-add-row">
-        <input type="text" id="fNovoResp" placeholder="Digite o nome do novo RT">
-        <button class="btn-primary btn-sm" onclick="addResponsavel()">Adicionar</button>
-      </div>
-      <div class="resp-list-label">Responsáveis cadastrados</div>
-      <div class="resp-list" id="respList"></div>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg>Responsável Técnico</h3>
       <div id="respAtualBox"></div>
     </div>
 
@@ -747,9 +741,7 @@ footer.appfoot{text-align:center;color:var(--text-muted);font-size:11px;padding:
     const style = document.createElement('style');
     style.textContent = `
       body.sge-readonly button[onclick="salvarCadastro()"],
-      body.sge-readonly button[onclick="addResponsavel()"],
-      body.sge-readonly .icon-btn.danger,
-      body.sge-readonly .icon-btn[onclick^="editarResponsavel"] {
+      body.sge-readonly .icon-btn.danger {
         display: none !important;
       }
     `;
@@ -767,14 +759,7 @@ footer.appfoot{text-align:center;color:var(--text-muted);font-size:11px;padding:
 /* ---------- ESTADO ---------- */
 const APLICACOES = ["Foil","Floco","Relevo","Puff","Glitter","Termo","DTF","Outros"];
 
-const RESPONSAVEIS_SEED = [
-  {id:1, nome:"Dr. Roberto Santos"},
-  {id:2, nome:"Eng. Maria Clara Lima"},
-  {id:3, nome:"Téc. Fernando Costa"}
-];
-let responsaveis = [];
-let respSeq = 1;
-let responsavelSelecionadoId = null;
+let perfilAtual = null; // usuário logado (Supabase Auth) — é sempre o responsável técnico
 
 let ops = []; // {numero, quantidade, status}
 
@@ -808,7 +793,7 @@ async function salvarRegistroNoBanco(reg){
       pedido_id: pedidoId,
       pedido_numero: reg.pedido || null,
       solicitante: reg.solicitante || null,
-      responsavel_id: responsavelSelecionadoId || null,
+      responsavel_usuario_id: perfilAtual ? perfilAtual.id : null,
       responsavel_nome: reg.responsavel || null,
       status: reg.status,
       aprovacao_geral: reg.aprovacaoGeral,
@@ -841,24 +826,7 @@ async function salvarRegistroNoBanco(reg){
 }
 
 async function carregarDadosDoBanco(){
-  try{
-    const { data: rows, error } = await window.sgeSupabase.from('responsaveis_qualidade').select('*').order('nome');
-    if(error) throw error;
-    if(!rows || rows.length === 0){
-      const { data: seeded, error: errSeed } = await window.sgeSupabase.from('responsaveis_qualidade')
-        .insert(RESPONSAVEIS_SEED.map(r => ({ nome: r.nome })))
-        .select();
-      if(errSeed) throw errSeed;
-      responsaveis = (seeded || []).map(r => ({ id: r.id, nome: r.nome }));
-    } else {
-      responsaveis = rows.map(r => ({ id: r.id, nome: r.nome }));
-    }
-  }catch(e){
-    console.error('Falha ao carregar responsáveis', e);
-    responsaveis = RESPONSAVEIS_SEED.slice();
-  }
-  if(!responsaveis.length) responsaveis = RESPONSAVEIS_SEED.slice();
-  respSeq = responsaveis.reduce((max,r)=>Math.max(max, r.id||0), 0) + 1;
+  perfilAtual = await sgeGetPerfil();
 
   try{
     const { data: rows, error } = await window.sgeSupabase.from('registros_qualidade').select('*').order('criado_em');
@@ -903,80 +871,13 @@ function toast(msg){
   window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-/* ---------- RESPONSÁVEIS ---------- */
-function renderResponsaveis(){
-  const list = document.getElementById('respList');
-  list.innerHTML = '';
-  responsaveis.forEach(r=>{
-    const row = document.createElement('div');
-    row.className = 'resp-row' + (responsavelSelecionadoId===r.id ? ' selected' : '');
-    row.innerHTML = `
-      <svg class="check-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
-      <span class="resp-name">${escapeHtml(r.nome)}</span>
-      <button class="btn-outline btn-sm" onclick="selecionarResponsavel(${r.id})">${responsavelSelecionadoId===r.id ? 'Selecionado' : 'Selecionar'}</button>
-      <span class="icon-btn" onclick="editarResponsavel(${r.id})" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
-      <span class="icon-btn danger" onclick="excluirResponsavel(${r.id})" title="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span>
-    `;
-    list.appendChild(row);
-  });
-  renderResponsavelAtual();
-}
+/* ---------- RESPONSÁVEL TÉCNICO (agora é sempre o usuário logado) ---------- */
 function renderResponsavelAtual(){
   const box = document.getElementById('respAtualBox');
-  const sel = responsaveis.find(r=>r.id===responsavelSelecionadoId);
-  if(sel){
-    box.innerHTML = `<div class="responsavel-atual"><svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Responsável deste cadastro: ${escapeHtml(sel.nome)}</div>`;
+  if(perfilAtual){
+    box.innerHTML = `<div class="responsavel-atual"><svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Responsável deste cadastro: ${escapeHtml(perfilAtual.nome)}</div>`;
   } else {
-    box.innerHTML = `<div class="responsavel-atual empty"><svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 9v4"/><circle cx="12" cy="12" r="9"/><path d="M12 16h.01"/></svg>Nenhum responsável selecionado para este cadastro</div>`;
-  }
-}
-async function addResponsavel(){
-  const input = document.getElementById('fNovoResp');
-  const nome = input.value.trim();
-  if(!nome){ toast('Digite um nome antes de adicionar.'); return; }
-  try{
-    const { data: row, error } = await window.sgeSupabase.from('responsaveis_qualidade').insert({ nome }).select().single();
-    if(error) throw error;
-    responsaveis.push({ id: row.id, nome: row.nome });
-    input.value = '';
-    renderResponsaveis();
-    toast('Responsável técnico adicionado.');
-  }catch(e){
-    toast('Não foi possível adicionar: ' + sgeMensagemErro(e));
-  }
-}
-function selecionarResponsavel(id){
-  responsavelSelecionadoId = (responsavelSelecionadoId===id) ? null : id;
-  renderResponsaveis();
-}
-async function editarResponsavel(id){
-  const r = responsaveis.find(x=>x.id===id);
-  if(!r) return;
-  const novo = prompt('Editar nome do responsável técnico:', r.nome);
-  if(novo && novo.trim()){
-    if(!(await sgeConfirmar('Salvar o novo nome "' + novo.trim() + '" para este responsável técnico?'))) return;
-    try{
-      const { error } = await window.sgeSupabase.from('responsaveis_qualidade').update({ nome: novo.trim() }).eq('id', id);
-      if(error) throw error;
-      r.nome = novo.trim();
-      renderResponsaveis();
-      toast('Nome atualizado.');
-    }catch(e){
-      toast('Não foi possível atualizar: ' + sgeMensagemErro(e));
-    }
-  }
-}
-async function excluirResponsavel(id){
-  if(!(await sgeConfirmar('Excluir este responsável técnico?'))) return;
-  try{
-    const { error } = await window.sgeSupabase.from('responsaveis_qualidade').delete().eq('id', id);
-    if(error) throw error;
-    responsaveis = responsaveis.filter(x=>x.id!==id);
-    if(responsavelSelecionadoId===id) responsavelSelecionadoId = null;
-    renderResponsaveis();
-    toast('Responsável removido.');
-  }catch(e){
-    toast('Não foi possível excluir: ' + sgeMensagemErro(e));
+    box.innerHTML = `<div class="responsavel-atual empty"><svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 9v4"/><circle cx="12" cy="12" r="9"/><path d="M12 16h.01"/></svg>Não foi possível identificar o usuário logado</div>`;
   }
 }
 
@@ -1255,7 +1156,6 @@ function renderApRows(){
 function coletarCadastroAtual(){
   const ref = document.getElementById('fRef').value.trim();
   const pedido = document.getElementById('fPedido').value.trim();
-  const responsavel = responsaveis.find(r=>r.id===responsavelSelecionadoId);
   const statusPorOps = ops.length ? (ops.every(o=>o.status==='aprovado') ? 'aprovado' : (ops.some(o=>o.status==='reprovado') ? 'reprovado' : 'pendente')) : 'pendente';
   const statusGeral = aprovacaoGeral || statusPorOps;
   return {
@@ -1264,7 +1164,7 @@ function coletarCadastroAtual(){
     pedido: pedido,
     solicitante: document.getElementById('fSolicitante').value.trim(),
     ops: JSON.parse(JSON.stringify(ops)),
-    responsavel: responsavel ? responsavel.nome : '—',
+    responsavel: perfilAtual ? perfilAtual.nome : '—',
     status: statusGeral,
     aprovacaoGeral: aprovacaoGeral,
     testes: {
@@ -1306,8 +1206,8 @@ async function salvarCadastro(){
     toast('Preencha Referência e Pedido antes de salvar.');
     return;
   }
-  if(!responsavelSelecionadoId){
-    toast('Selecione um responsável técnico antes de salvar.');
+  if(!perfilAtual){
+    toast('Não foi possível identificar o usuário logado. Recarregue a página.');
     return;
   }
   if(idEmEdicao && !(await sgeConfirmar('Deseja salvar as alterações neste cadastro de qualidade?'))){
@@ -1340,8 +1240,6 @@ function limparTudo(){
   resetAmostraSlot('imgEstampaAmostra');
   resetAmostraSlot('imgTaglessAmostra');
   document.getElementById('refHint').textContent = 'Informe o Pedido para carregar automaticamente a Referência (imagens do Módulo 01) e as OPs (Módulo 02).';
-  responsavelSelecionadoId = null;
-  renderResponsaveis();
   uploads = {};
   ['dzEstampaProd','dzTaglessProd'].forEach(id=>{
     document.getElementById(id).innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v14M12 3l-4 4M12 3l4 4"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>Arraste uma imagem ou clique para selecionar<input type="file" accept="image/*" onchange="handleUpload(event,'${id}')">`;
@@ -1502,9 +1400,6 @@ function carregarRegistro(id){
   ops = JSON.parse(JSON.stringify(r.ops));
   pedidoCarregadoOps = r.pedido || null;
   renderOps();
-  const resp = responsaveis.find(x=>x.nome===r.responsavel);
-  responsavelSelecionadoId = resp ? resp.id : null;
-  renderResponsaveis();
   document.getElementById('tFriccaoGrauSeco').value = r.testes.friccao.seco;
   document.getElementById('tFriccaoGrauMolhado').value = r.testes.friccao.molhado;
   document.getElementById('tFriccaoAvaliacao').value = r.testes.friccao.avaliacao;
@@ -1524,7 +1419,9 @@ function carregarRegistro(id){
   carregarImagensAmostraDoModulo01(r.referencia);
   restaurarFotoProduzida('dzEstampaProd', r.imagens && r.imagens.estampaProd);
   restaurarFotoProduzida('dzTaglessProd', r.imagens && r.imagens.taglessProd);
-  document.getElementById('refHint').textContent = 'Cadastro carregado da busca.';
+  document.getElementById('refHint').textContent = r.responsavel && perfilAtual && r.responsavel !== perfilAtual.nome
+    ? 'Cadastro carregado da busca (registrado originalmente por ' + r.responsavel + '; ao salvar, o responsável passa a ser ' + perfilAtual.nome + ').'
+    : 'Cadastro carregado da busca.';
   toast('Cadastro carregado no formulário.');
   window.scrollTo({top:0, behavior:'smooth'});
 }
@@ -1605,7 +1502,7 @@ function escapeHtml(str){
 async function iniciar(){
   document.getElementById('fDataHora').value = formatDateTimeLocal(new Date());
   await carregarDadosDoBanco();
-  renderResponsaveis();
+  renderResponsavelAtual();
   renderOps();
   renderAprovacaoGeral();
   renderApRows();
