@@ -352,28 +352,11 @@ footer.appfoot{text-align:center;color:var(--text-muted);font-size:11px;padding:
   </div>
 
   <!-- LINHA 2 — AMOSTRAS EM DESTAQUE -->
+  <div class="grid grid-images" id="estampasContainer">
+    <!-- Um card "Estampa Localizada" é criado aqui para cada estampa da ficha (Módulo 01) -->
+  </div>
+
   <div class="grid grid-images">
-
-    <div class="card featured">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>Estampa Localizada</h3>
-      <div class="img-pair">
-        <div class="img-block">
-          <div class="img-block-title">Amostra de referência</div>
-          <div class="img-slot" id="imgEstampaAmostra">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-          </div>
-        </div>
-        <div class="img-block">
-          <div class="img-block-title">Peça produzida</div>
-          <label class="dropzone" id="dzEstampaProd">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v14M12 3l-4 4M12 3l4 4"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
-            Arraste uma imagem ou clique para selecionar
-            <input type="file" accept="image/*" onchange="handleUpload(event,'dzEstampaProd')">
-          </label>
-        </div>
-      </div>
-    </div>
-
     <div class="card featured">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 3h12l2 4-6 3 1 11H9l1-11-6-3z"/></svg>Tagless Gola</h3>
       <div class="img-pair">
@@ -888,9 +871,8 @@ function onRefChange(){
   clearTimeout(refDebounce);
   const hint = document.getElementById('refHint');
   if(!ref){
-    resetAmostraSlot('imgEstampaAmostra');
-    resetAmostraSlot('imgTaglessAmostra');
-    delete uploads['imgEstampaAmostra'];
+    renderEstampaCards(0);
+    resetAmostraSlot('imgTaglessAmostra', 'tagless');
     delete uploads['imgTaglessAmostra'];
     hint.textContent = 'Digite a referência para carregar as imagens de amostra.';
     return;
@@ -899,6 +881,39 @@ function onRefChange(){
   setLoading('imgEstampaAmostra', true);
   setLoading('imgTaglessAmostra', true);
   refDebounce = setTimeout(() => carregarImagensAmostraDoModulo01(ref), 350);
+}
+
+/* Cria dinamicamente um card "Estampa Localizada" para cada estampa da ficha
+   (antes só existia 1 card fixo, então a Estampa 2, 3... nunca apareciam) */
+function renderEstampaCards(qtd){
+  const container = document.getElementById('estampasContainer');
+  container.innerHTML = '';
+  if(qtd <= 0) qtd = 1; // sempre mostra ao menos 1 card, mesmo vazio, igual ao layout original
+  for(let i = 0; i < qtd; i++){
+    const titulo = qtd > 1 ? ('Estampa Localizada ' + (i+1)) : 'Estampa Localizada';
+    const card = document.createElement('div');
+    card.className = 'card featured';
+    card.innerHTML = `
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>${escapeHtml(titulo)}</h3>
+      <div class="img-pair">
+        <div class="img-block">
+          <div class="img-block-title">Amostra de referência</div>
+          <div class="img-slot" id="imgEstampaAmostra_${i}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          </div>
+        </div>
+        <div class="img-block">
+          <div class="img-block-title">Peça produzida</div>
+          <label class="dropzone" id="dzEstampaProd_${i}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v14M12 3l-4 4M12 3l4 4"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
+            Arraste uma imagem ou clique para selecionar
+            <input type="file" accept="image/*" onchange="handleUpload(event,'dzEstampaProd_${i}')">
+          </label>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  }
 }
 
 async function carregarImagensAmostraDoModulo01(ref){
@@ -912,23 +927,24 @@ async function carregarImagensAmostraDoModulo01(ref){
   }
 
   if(!ficha){
-    setLoading('imgEstampaAmostra', false, 'estampa');
+    renderEstampaCards(0);
     setLoading('imgTaglessAmostra', false, 'tagless');
-    delete uploads['imgEstampaAmostra'];
     delete uploads['imgTaglessAmostra'];
     hint.textContent = 'Nenhuma ficha encontrada no Módulo 01 para a referência ' + ref + '.';
     return;
   }
 
-  const estampaComImagem = (ficha.estampas || []).find(e => e.image);
-  const estampaImg = estampaComImagem ? estampaComImagem.image : null;
-  const taglessImg = (ficha.tagless && ficha.tagless.image) ? ficha.tagless.image : null;
+  const estampasComImagem = (ficha.estampas || []).filter(e => e.image);
+  renderEstampaCards(estampasComImagem.length);
+  estampasComImagem.forEach((e, i) => aplicarAmostraSlot('imgEstampaAmostra_' + i, e.image, 'estampa'));
 
-  aplicarAmostraSlot('imgEstampaAmostra', estampaImg, 'estampa');
+  const taglessImg = (ficha.tagless && ficha.tagless.image) ? ficha.tagless.image : null;
   aplicarAmostraSlot('imgTaglessAmostra', taglessImg, 'tagless');
 
-  if(estampaImg || taglessImg){
-    hint.textContent = 'Imagens de amostra carregadas do Módulo 01 para a referência ' + ref + '.';
+  if(estampasComImagem.length || taglessImg){
+    hint.textContent = estampasComImagem.length > 1
+      ? (estampasComImagem.length + ' estampas carregadas do Módulo 01 para a referência ' + ref + (taglessImg ? ' (+ tagless).' : '.'))
+      : 'Imagens de amostra carregadas do Módulo 01 para a referência ' + ref + '.';
   } else {
     hint.textContent = 'Ficha encontrada no Módulo 01, mas sem imagens de amostra cadastradas para ' + ref + '.';
   }
@@ -948,12 +964,13 @@ function aplicarAmostraSlot(id, src, tipo){
     setLoading(id, false, tipo);
   }
 }
-function resetAmostraSlot(id){
+function resetAmostraSlot(id, tipo){
   const el = document.getElementById(id);
+  if(!el) return;
   el.classList.remove('loading');
-  el.innerHTML = el.id==='imgEstampaAmostra'
-    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>`
-    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h12l2 4-6 3 1 11H9l1-11-6-3z"/></svg>`;
+  el.innerHTML = tipo==='tagless'
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h12l2 4-6 3 1 11H9l1-11-6-3z"/></svg>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>`;
 }
 function setLoading(id, on, tipo){
   const el = document.getElementById(id);
@@ -1181,8 +1198,10 @@ function coletarCadastroAtual(){
       aplicacoes: JSON.parse(JSON.stringify(aplicacoesRows.map(r=>({tecnica:r.tecnica, avaliacao:r.avaliacao}))))
     },
     imagens: {
-      estampaAmostra: uploads['imgEstampaAmostra'] || null,
-      estampaProd: uploads['dzEstampaProd'] || null,
+      estampas: Array.from(document.querySelectorAll('#estampasContainer .img-slot')).map((el, i) => ({
+        amostra: uploads['imgEstampaAmostra_' + i] || null,
+        produzida: uploads['dzEstampaProd_' + i] || null
+      })),
       taglessAmostra: uploads['imgTaglessAmostra'] || null,
       taglessProd: uploads['dzTaglessProd'] || null
     },
@@ -1237,13 +1256,11 @@ function limparTudo(){
   ops = [];
   pedidoCarregadoOps = null;
   renderOps();
-  resetAmostraSlot('imgEstampaAmostra');
-  resetAmostraSlot('imgTaglessAmostra');
+  renderEstampaCards(0);
+  resetAmostraSlot('imgTaglessAmostra', 'tagless');
   document.getElementById('refHint').textContent = 'Informe o Pedido para carregar automaticamente a Referência (imagens do Módulo 01) e as OPs (Módulo 02).';
   uploads = {};
-  ['dzEstampaProd','dzTaglessProd'].forEach(id=>{
-    document.getElementById(id).innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v14M12 3l-4 4M12 3l4 4"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>Arraste uma imagem ou clique para selecionar<input type="file" accept="image/*" onchange="handleUpload(event,'${id}')">`;
-  });
+  document.getElementById('dzTaglessProd').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v14M12 3l-4 4M12 3l4 4"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>Arraste uma imagem ou clique para selecionar<input type="file" accept="image/*" onchange="handleUpload(event,'dzTaglessProd')">`;
   ['tFriccaoGrauSeco','tFriccaoGrauMolhado','tLavagemDefeito','tLavagemAprovado'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('tFriccaoAvaliacao').value='';
   document.getElementById('tLavagemAvaliacao').value='';
@@ -1266,6 +1283,14 @@ function imprimirCadastro(){
 }
 function buildPrintDocument(lista){
   return lista.map(r=>montarPrintCadastro(r)).join('');
+}
+// Normaliza o formato de imagens de estampa: cadastros novos guardam um array
+// (imagens.estampas), cadastros antigos guardavam só 1 estampa (imagens.estampaAmostra/estampaProd).
+function estampasParaPrint(imagens){
+  if(!imagens) return [];
+  if(Array.isArray(imagens.estampas)) return imagens.estampas.map(e => ({ amostra: e.amostra, produzida: e.produzida }));
+  if(imagens.estampaAmostra || imagens.estampaProd) return [{ amostra: imagens.estampaAmostra, produzida: imagens.estampaProd }];
+  return [];
 }
 function montarPrintCadastro(r){
   const dataHoraStr = new Date(r.criadoEm).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'});
@@ -1305,8 +1330,10 @@ function montarPrintCadastro(r){
 
     <div class="print-section-title">Imagens de Amostra</div>
     <div class="print-images-grid">
-      ${imgBox('Estampa · Amostra', r.imagens && r.imagens.estampaAmostra)}
-      ${imgBox('Estampa · Produzida', r.imagens && r.imagens.estampaProd)}
+      ${estampasParaPrint(r.imagens).map((e, i) => {
+        const rotulo = estampasParaPrint(r.imagens).length > 1 ? ('Estampa ' + (i+1)) : 'Estampa';
+        return imgBox(rotulo + ' · Amostra', e.amostra) + imgBox(rotulo + ' · Produzida', e.produzida);
+      }).join('')}
       ${imgBox('Tagless · Amostra', r.imagens && r.imagens.taglessAmostra)}
       ${imgBox('Tagless · Produzida', r.imagens && r.imagens.taglessProd)}
     </div>
@@ -1390,7 +1417,7 @@ function statusPill(status){
   if(status==='reprovado') return '<span class="pill danger">Reprovado</span>';
   return '<span class="pill muted">Pendente</span>';
 }
-function carregarRegistro(id){
+async function carregarRegistro(id){
   const r = registros.find(x=>x.id===id);
   if(!r) return;
   idEmEdicao = r.id;
@@ -1414,10 +1441,19 @@ function carregarRegistro(id){
   aprovacaoGeral = r.aprovacaoGeral || null;
   renderAprovacaoGeral();
   document.getElementById('fDataHora').value = formatDateTimeLocal(new Date(r.criadoEm));
-  setLoading('imgEstampaAmostra', true);
   setLoading('imgTaglessAmostra', true);
-  carregarImagensAmostraDoModulo01(r.referencia);
-  restaurarFotoProduzida('dzEstampaProd', r.imagens && r.imagens.estampaProd);
+  // Recarrega as amostras direto do Módulo 01 (sempre a versão mais atual da ficha,
+  // já cria um card por estampa) e, por cima, restaura as fotos "peça produzida"
+  // que foram salvas neste cadastro específico.
+  await carregarImagensAmostraDoModulo01(r.referencia);
+  const estampasSalvas = (r.imagens && Array.isArray(r.imagens.estampas))
+    ? r.imagens.estampas
+    : (r.imagens && (r.imagens.estampaAmostra || r.imagens.estampaProd))
+      ? [{ amostra: r.imagens.estampaAmostra, produzida: r.imagens.estampaProd }] // cadastro antigo, formato de 1 estampa só
+      : [];
+  estampasSalvas.forEach((e, i) => {
+    if(e.produzida) restaurarFotoProduzida('dzEstampaProd_' + i, e.produzida);
+  });
   restaurarFotoProduzida('dzTaglessProd', r.imagens && r.imagens.taglessProd);
   document.getElementById('refHint').textContent = r.responsavel && perfilAtual && r.responsavel !== perfilAtual.nome
     ? 'Cadastro carregado da busca (registrado originalmente por ' + r.responsavel + '; ao salvar, o responsável passa a ser ' + perfilAtual.nome + ').'
@@ -1501,6 +1537,7 @@ function escapeHtml(str){
 /* ---------- INIT ---------- */
 async function iniciar(){
   document.getElementById('fDataHora').value = formatDateTimeLocal(new Date());
+  renderEstampaCards(0);
   await carregarDadosDoBanco();
   renderResponsavelAtual();
   renderOps();
