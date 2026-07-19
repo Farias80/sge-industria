@@ -801,6 +801,16 @@ async function salvarRegistroNoBanco(reg){
       regSeq = Math.max(regSeq, row.id) + 1;
     }
     marcarSalvando('Salvo no Supabase · ' + new Date().toLocaleTimeString('pt-BR'));
+
+    // Sinaliza o resultado da qualidade (aprovado/reprovado/pendente) direto no
+    // pedido, para que os Módulos 02 (Estamparia) e 03 (Laboratório) também vejam.
+    if(pedidoId){
+      try{
+        await window.sgeSupabase.from('pedidos').update({ status_qualidade: reg.status }).eq('id', pedidoId);
+      }catch(e){
+        console.error('Não foi possível sinalizar o status de qualidade no pedido', e);
+      }
+    }
   }catch(e){
     console.error('Falha ao salvar cadastro', e);
     marcarSalvando('Não foi possível salvar: ' + sgeMensagemErro(e));

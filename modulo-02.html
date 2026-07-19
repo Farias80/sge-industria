@@ -454,6 +454,13 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
 .status-badge.pendente{background:#FBF1E1;color:#B4780B;border:1px solid #F0DDB0;}
 .status-badge.concluida{background:var(--ok-50);color:var(--ok);border:1px solid #CDEEE0;}
 .status-badge svg{width:12px;height:12px;}
+.qual-badge{
+  display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;
+  padding:4px 9px;border-radius:100px;white-space:nowrap;text-transform:uppercase;letter-spacing:.02em;
+}
+.qual-badge.aprovado{background:var(--ok-50);color:var(--ok);border:1px solid #CDEEE0;}
+.qual-badge.reprovado{background:#FCEAE9;color:#DC3630;border:1px solid #F6D3D1;}
+.qual-badge.pendente{background:#F1F2F8;color:#6A6F94;border:1px solid var(--border);}
 .status-toggle{
   background:none;border:1.5px solid var(--border);color:var(--text-muted);border-radius:8px;
   padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;
@@ -573,10 +580,10 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     <div class="pedidos-table-wrap">
       <table class="pedidos-table">
         <thead>
-          <tr><th>Pedido</th><th>Referência</th><th>Ordens de Produção</th><th>Qtd. Total</th><th>Status</th><th>Salvo em</th><th></th></tr>
+          <tr><th>Pedido</th><th>Referência</th><th>Ordens de Produção</th><th>Qtd. Total</th><th>Status</th><th>Qualidade</th><th>Salvo em</th><th></th></tr>
         </thead>
         <tbody id="pedidosTableBody">
-          <tr class="pedidos-empty-row"><td colspan="7">Nenhum pedido salvo ainda.</td></tr>
+          <tr class="pedidos-empty-row"><td colspan="8">Nenhum pedido salvo ainda.</td></tr>
         </tbody>
       </table>
     </div>
@@ -897,6 +904,11 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
   /* ---------------- Status do pedido (Pendente/Concluída) ---------------- */
   const statusBadgeBox = $('#statusBadgeBox');
   function statusLabel(status){ return status === 'concluida' ? 'Concluída' : 'Pendente'; }
+  function qualBadgeHtml(statusQualidade){
+    const s = statusQualidade || 'pendente';
+    const label = s === 'aprovado' ? 'Aprovado' : (s === 'reprovado' ? 'Reprovado' : 'Pendente');
+    return `<span class="qual-badge ${s}">${label}</span>`;
+  }
   function renderStatusBadge(){
     const status = pedidoState.status === 'concluida' ? 'concluida' : 'pendente';
     const icon = status === 'concluida'
@@ -1196,6 +1208,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
         pedido: p.numero,
         referencia: p.referencia,
         status: p.status,
+        statusQualidade: p.status_qualidade || 'pendente',
         savedAt: p.atualizado_em,
         ordens: (p.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0))
       }));
@@ -1221,7 +1234,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     if(filtroAtual === 'concluida') items = items.filter(p => p.status === 'concluida');
 
     if(items.length === 0){
-      pedidosTableBody.innerHTML = '<tr class="pedidos-empty-row"><td colspan="7">Nenhum pedido encontrado para este filtro.</td></tr>';
+      pedidosTableBody.innerHTML = '<tr class="pedidos-empty-row"><td colspan="8">Nenhum pedido encontrado para este filtro.</td></tr>';
       return;
     }
     pedidosTableBody.innerHTML = items.map(p => {
@@ -1237,6 +1250,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
           <td class="ops-cell">${escapeHtml(opsTxt)}</td>
           <td>${qtdTotal || '—'}</td>
           <td><span class="status-badge ${status}">${statusLabel(status)}</span></td>
+          <td>${qualBadgeHtml(p.statusQualidade)}</td>
           <td class="ops-cell">${savedAtCell}</td>
           <td>
             <button class="table-open-btn" type="button" data-pedido="${escapeHtml(p.pedido)}">Abrir</button>
@@ -1328,6 +1342,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
       if(error) throw error;
       const items = (rows || []).map(p => ({
         pedido: p.numero, referencia: p.referencia, status: p.status,
+        statusQualidade: p.status_qualidade || 'pendente',
         ordens: (p.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0))
       }));
       const matches = items.filter(p => pedidoMatches(p, filters));
@@ -1350,7 +1365,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
       item.className = 'search-result-item';
       item.innerHTML = `
         <div class="search-result-main">
-          <div class="search-result-ref">${escapeHtml(p.pedido || '—')}</div>
+          <div class="search-result-ref">${escapeHtml(p.pedido || '—')} ${qualBadgeHtml(p.statusQualidade)}</div>
           <div class="search-result-meta">Ref. ${escapeHtml(p.referencia || '—')}</div>
           <div class="search-result-tags">${ops.map(o => `<span class="tag-chip">${escapeHtml(o)}</span>`).join('')}</div>
         </div>

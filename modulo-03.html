@@ -1431,12 +1431,27 @@
             }
         };
         
+        const qualBadgeHtml3 = (statusQualidade) => {
+            if (!statusQualidade || statusQualidade === 'pendente') return '';
+            const cor = statusQualidade === 'aprovado' ? '#1C9A6C' : '#DC3630';
+            const fundo = statusQualidade === 'aprovado' ? '#E7F7F1' : '#FCEAE9';
+            const label = statusQualidade === 'aprovado' ? 'Aprovado' : 'Reprovado';
+            return `<span style="display:inline-block;margin-left:6px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;padding:2px 7px;border-radius:100px;background:${fundo};color:${cor};">${label}</span>`;
+        };
+
         const carregarReceitas = async () => {
             try {
                 const receitas = await getAllData('receitas');
                 const materiasPrimas = await getAllData('materiasPrimas');
                 const produtos = await getAllData('produtos');
                 const fornecedores = await getAllData('fornecedores');
+
+                // Status de qualidade de cada pedido (Módulo 04), pra sinalizar aqui também
+                let qualidadePorPedido = {};
+                try {
+                    const { data: pedidosRows } = await window.sgeSupabase.from('pedidos').select('numero, status_qualidade');
+                    (pedidosRows || []).forEach(p => { qualidadePorPedido[p.numero] = p.status_qualidade; });
+                } catch (e) { /* segue sem o selo se não conseguir buscar */ }
                 
                 // Criar mapas para fácil acesso
                 const produtosMap = {};
@@ -1470,7 +1485,7 @@
                         <td>${receita.referencia}</td>
                         <td>${receita.amostraPedido}</td>
                         <td>${receita.op || 'N/A'}</td>
-                        <td>${receita.pedido ? receita.pedido : '—'}</td>
+                        <td>${receita.pedido ? receita.pedido : '—'}${receita.pedido ? qualBadgeHtml3(qualidadePorPedido[receita.pedido]) : ''}</td>
                         <td>${formatarData(receita.dataCadastro)}</td>
                         <td class="action-buttons">
                             <button class="detalhes-receita" data-id="${receita.id}">Detalhes</button>
@@ -1531,15 +1546,21 @@
 
         const carregarPedidosDoModulo02 = async () => {
             try {
-                const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('numero, referencia, status');
+                const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('numero, referencia, status, status_qualidade');
                 if (error) throw error;
-                const items = (rows || []).map(r => ({ pedido: r.numero, referencia: r.referencia, status: r.status }));
+                const items = (rows || []).map(r => ({ pedido: r.numero, referencia: r.referencia, status: r.status, statusQualidade: r.status_qualidade || 'pendente' }));
                 items.sort((a, b) => (a.status === 'concluida') - (b.status === 'concluida') || (b.pedido||'').localeCompare(a.pedido||''));
                 pedidosDisponiveis = items;
             } catch (e) {
                 pedidosDisponiveis = [];
             }
             preencherSelectPedido();
+        };
+
+        const qualLabelCurto = (statusQualidade) => {
+            if (statusQualidade === 'aprovado') return 'Qualidade: Aprovado';
+            if (statusQualidade === 'reprovado') return 'Qualidade: Reprovado';
+            return null; // não polui a lista quando ainda está pendente
         };
 
         const preencherSelectPedido = () => {
@@ -1550,7 +1571,8 @@
                 const opt = document.createElement('option');
                 opt.value = p.pedido;
                 const statusTxt = p.status === 'concluida' ? 'Concluída' : 'Pendente';
-                opt.textContent = `${p.pedido} — Ref. ${p.referencia} (${statusTxt})`;
+                const qualTxt = qualLabelCurto(p.statusQualidade);
+                opt.textContent = `${p.pedido} — Ref. ${p.referencia} (${statusTxt})` + (qualTxt ? ` · ${qualTxt}` : '');
                 select.appendChild(opt);
             });
             if (valorAtual && [...select.options].some(o => o.value === valorAtual)) {
