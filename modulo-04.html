@@ -892,7 +892,6 @@ function onRefChange(){
     return;
   }
   hint.textContent = 'Carregando imagens de amostra...';
-  setLoading('imgEstampaAmostra', true);
   setLoading('imgTaglessAmostra', true);
   refDebounce = setTimeout(() => carregarImagensAmostraDoModulo01(ref), 350);
 }
@@ -1052,7 +1051,6 @@ function preencherReferenciaAutomaticamente(ref){
   if((fRefInput.value || '').trim() === ref) return; // já está com essa referência, evita recarregar à toa
   fRefInput.value = ref;
   clearTimeout(refDebounce);
-  setLoading('imgEstampaAmostra', true);
   setLoading('imgTaglessAmostra', true);
   document.getElementById('refHint').textContent = 'Referência preenchida automaticamente pelo Pedido — carregando imagens de amostra...';
   carregarImagensAmostraDoModulo01(ref);
