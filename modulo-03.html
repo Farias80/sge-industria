@@ -89,9 +89,9 @@
     }
 
     .brand-mark{
-        width:36px;height:36px;border:1.5px solid rgba(255,255,255,.75);border-radius:9px;
-        display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
     }
+    .brand-mark img{width:100%;height:100%;object-fit:contain;}
 
     .logo h1 {
         font-size: 19px;
@@ -570,7 +570,7 @@
         <div class="container header-content">
             <div class="logo">
                 <div class="brand-mark">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M13 2 3 14h7l-1 8 11-14h-7l1-6z"/></svg>
+                    <img src="assets/logo/logo-white.png" alt="SGE">
                 </div>
                 <div>
                     <h1>SGE — Rastreamento de Insumos</h1>
@@ -1307,6 +1307,17 @@
         
         
         // Funções específicas da aplicação
+
+        // Usado pelos estados vazios ("Nenhum X cadastrado ainda") para levar
+        // direto ao formulário certo e já focar no primeiro campo.
+        window.irParaCadastro = (secaoId, focusId) => {
+            const link = document.querySelector('.nav-link[data-section="' + secaoId + '"]');
+            if (link) link.click();
+            setTimeout(() => {
+                const el = document.getElementById(focusId);
+                if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            }, 60);
+        };
         const carregarFornecedores = async () => {
             try {
                 const fornecedores = await getAllData('fornecedores');
@@ -1334,6 +1345,10 @@
                 // Atualizar tabela de fornecedores
                 const tbody = document.querySelector('#tabelaFornecedores tbody');
                 tbody.innerHTML = '';
+
+                if (fornecedores.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:26px;">Nenhum fornecedor cadastrado ainda. <a href="#" onclick="irParaCadastro(\'fornecedor\',\'fornecedorNome\');return false;" style="color:var(--indigo-600);font-weight:600;text-decoration:none;">Cadastrar o primeiro →</a></td></tr>';
+                }
                 
                 fornecedores.forEach(fornecedor => {
                     const tr = document.createElement('tr');
@@ -1385,6 +1400,10 @@
                 // Atualizar tabela de produtos
                 const tbody = document.querySelector('#tabelaProdutos tbody');
                 tbody.innerHTML = '';
+
+                if (produtos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:26px;">Nenhum produto cadastrado ainda. <a href="#" onclick="irParaCadastro(\'produto\',\'produtoNome\');return false;" style="color:var(--indigo-600);font-weight:600;text-decoration:none;">Cadastrar o primeiro →</a></td></tr>';
+                }
                 
                 produtos.forEach(produto => {
                     const tr = document.createElement('tr');
@@ -1406,6 +1425,10 @@
                 // Atualizar tabela de estoque
                 const estoqueTbody = document.querySelector('#tabelaEstoque tbody');
                 estoqueTbody.innerHTML = '';
+
+                if (produtos.length === 0) {
+                    estoqueTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:26px;">Nenhum item em estoque ainda. <a href="#" onclick="irParaCadastro(\'produto\',\'produtoNome\');return false;" style="color:var(--indigo-600);font-weight:600;text-decoration:none;">Cadastrar entrada de estoque →</a></td></tr>';
+                }
                 
                 produtos.forEach(produto => {
                     const tr = document.createElement('tr');
@@ -1484,6 +1507,10 @@
 
                 const tbody = document.querySelector('#tabelaReceitas tbody');
                 tbody.innerHTML = '';
+
+                if (receitasOrdenadas.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:26px;">Nenhuma receita cadastrada ainda. <a href="#" onclick="document.getElementById(\'receitaPantone\').focus();return false;" style="color:var(--indigo-600);font-weight:600;text-decoration:none;">Cadastrar a primeira →</a></td></tr>';
+                }
                 
                 for (const receita of receitasOrdenadas) {
                     const tr = document.createElement('tr');

@@ -46,7 +46,8 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
   min-height:92px;box-sizing:border-box;
 }
 .brand{display:flex;align-items:center;gap:12px;font-family:'Sora',sans-serif;font-weight:700;font-size:20px;letter-spacing:.02em;}
-.brand-mark{width:38px;height:38px;border:1.5px solid rgba(255,255,255,.75);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.brand-mark{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.brand-mark img{width:100%;height:100%;object-fit:contain;}
 .topbar-sub{color:rgba(255,255,255,.6);font-size:12.5px;margin-top:2px;}
 .home-link{
   display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);
@@ -309,7 +310,7 @@ footer.appfoot{text-align:center;color:var(--text-muted);font-size:11px;padding:
 
 <div class="topbar">
   <div class="brand-mark">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M13 2 3 14h7l-1 8 11-14h-7l1-6z"/></svg>
+    <img src="assets/logo/logo-white.png" alt="SGE">
   </div>
   <div>
     <div class="brand">SGE — Gestão de Qualidade</div>
@@ -1388,9 +1389,13 @@ function runSearch(){
 
   const body = document.getElementById('resultsBody');
   if(filtrados.length===0){
-    body.innerHTML = `<tr><td colspan="6"><div class="empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><br>
-      Nenhum cadastro encontrado.</div></td></tr>`;
+    body.innerHTML = registros.length === 0
+      ? `<tr><td colspan="6"><div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><br>
+          Nenhum cadastro de qualidade ainda. <a href="#" onclick="document.getElementById('fPedido').focus();window.scrollTo({top:0,behavior:'smooth'});return false;" style="color:#5B4FE8;font-weight:600;text-decoration:none;">Criar o primeiro →</a></div></td></tr>`
+      : `<tr><td colspan="6"><div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><br>
+          Nenhum cadastro encontrado com esses filtros. <a href="#" onclick="['sRef','sPedido','sOp'].forEach(id=>document.getElementById(id).value='');document.getElementById('sStatus').value='';runSearch();return false;" style="color:#5B4FE8;font-weight:600;text-decoration:none;">Limpar filtros</a></div></td></tr>`;
     return;
   }
   body.innerHTML = filtrados.map(r=>`
