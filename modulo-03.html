@@ -1750,6 +1750,67 @@
 
         document.getElementById('receitaPantone').addEventListener('input', atualizarPantoneChipsUsados);
 
+        // Banco de pantones "de verdade": ao digitar um pantone que já tem
+        // receita cadastrada, oferece carregar a matéria-prima/coloração dela
+        // como ponto de partida — o usuário ainda pode ajustar tudo antes de salvar.
+        let ultimoPantoneChecado = '';
+        document.getElementById('receitaPantone').addEventListener('blur', async (e) => {
+            // Só se aplica ao cadastrar uma receita nova (não durante uma edição)
+            if (document.getElementById('receitaId').value) return;
+
+            const valor = (e.target.value || '').trim();
+            const valorNormalizado = valor.toLowerCase();
+            if (!valor || valorNormalizado === ultimoPantoneChecado) return;
+            ultimoPantoneChecado = valorNormalizado;
+
+            try {
+                const receitas = await getAllData('receitas');
+                const correspondentes = receitas
+                    .filter(r => (r.pantone || '').trim().toLowerCase() === valorNormalizado)
+                    .sort((a, b) => new Date(b.dataCadastro || 0) - new Date(a.dataCadastro || 0));
+                if (correspondentes.length === 0) return;
+
+                const receitaBase = correspondentes[0];
+                if (mpEntries.length > 0 || corEntries.length > 0) {
+                    if (!(await sgeConfirmar('O pantone "' + valor + '" já tem receita cadastrada (referência ' + (receitaBase.referencia || '—') + '). Carregar a matéria-prima/coloração dela? Isso substitui os itens já adicionados aqui — você pode ajustar depois de carregar.'))) return;
+                } else {
+                    if (!(await sgeConfirmar('O pantone "' + valor + '" já tem receita cadastrada (referência ' + (receitaBase.referencia || '—') + '). Deseja carregar a matéria-prima/coloração dela como ponto de partida? Você pode ajustar as quantidades antes de salvar.'))) return;
+                }
+
+                const materiasPrimasBase = await getDataByIndex('materiasPrimas', 'receitaId', receitaBase.id);
+                mpEntries = [];
+                corEntries = [];
+
+                for (const materia of materiasPrimasBase) {
+                    const produto = await getDataById('produtos', materia.produtoId);
+                    if (!produto) continue;
+                    const fornecedor = await getDataById('fornecedores', produto.fornecedorId);
+
+                    const entrada = {
+                        produtoId: produto.id,
+                        produtoNome: produto.nome,
+                        fornecedorNome: fornecedor ? fornecedor.nome : 'N/A',
+                        lote: produto.lote,
+                        data: formatarData(produto.dataFabricacao),
+                        tipo: materia.tipo || '',
+                        quantidade: materia.quantidade ? Number(materia.quantidade).toFixed(2) : ''
+                    };
+
+                    if (materia.grupo === 'coloracao') {
+                        corEntries.push(entrada);
+                    } else {
+                        mpEntries.push(entrada);
+                    }
+                }
+
+                renderizarEntradas('materiasPrimas', 'materiasPrimasEmpty', mpEntries);
+                renderizarEntradas('coloracaoPrimas', 'coloracaoPrimasEmpty', corEntries);
+                sgeToast('Matéria-prima e coloração carregadas do pantone "' + valor + '". Confira as quantidades antes de salvar.');
+            } catch (err) {
+                console.error('Erro ao buscar receita pelo pantone:', err);
+            }
+        });
+
         // Marca o pedido do Módulo 02 como concluído quando uma receita é salva vinculada a ele
         // Observação: isso grava na tabela `pedidos`, que pertence ao setor "estamparia" — só
         // funciona se quem estiver logado tiver permissão de edição nesse setor (ou for admin).
@@ -2193,6 +2254,7 @@
                         document.getElementById('receitaTipo').value = '';
                         document.getElementById('receitaAmostraPedido').value = '';
                         pantoneOrigemAtual = '';
+                        ultimoPantoneChecado = '';
                         mpEntries = [];
                         corEntries = [];
                         renderizarEntradas('materiasPrimas', 'materiasPrimasEmpty', mpEntries);
@@ -2219,6 +2281,7 @@
                     document.getElementById('formReceita').reset();
                     document.getElementById('receitaId').value = '';
                     pantoneOrigemAtual = '';
+                    ultimoPantoneChecado = '';
                     mpEntries = [];
                     corEntries = [];
                     renderizarEntradas('materiasPrimas', 'materiasPrimasEmpty', mpEntries);
