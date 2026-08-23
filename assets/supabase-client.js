@@ -14,7 +14,15 @@ if (!window.supabase || typeof window.supabase.createClient !== 'function') {
   alert('Não foi possível carregar a conexão com o banco de dados (Supabase). Recarregue a página; se o problema continuar, avise o administrador.');
 }
 
-window.sgeSupabase = window.supabase.createClient(SGE_SUPABASE_URL, SGE_SUPABASE_ANON_KEY);
+window.sgeSupabase = window.supabase.createClient(SGE_SUPABASE_URL, SGE_SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,       // guarda a sessão no localStorage do navegador
+    autoRefreshToken: true,     // renova o token sozinho antes de expirar
+    detectSessionInUrl: true,   // necessário para o link de redefinir senha funcionar
+    storage: window.localStorage,
+    storageKey: 'sge-auth-token' // chave fixa, igual em todas as páginas do sistema
+  }
+});
 
 /* ---------------- Sessão / autenticação ---------------- */
 
