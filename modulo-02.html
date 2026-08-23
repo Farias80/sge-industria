@@ -1044,7 +1044,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
   async function carregarFichaDoModulo01(ref){
     if(!ref){ fichaAtual = null; fichaStatus = 'empty'; renderRefStatus(); renderFichaPreview(); return; }
     try{
-      const { data: row } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', ref).maybeSingle();
+      const { data: row } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', ref).is('deletado_em', null).maybeSingle();
       fichaAtual = row ? row.dados : null;
       fichaStatus = fichaAtual ? 'found' : 'notfound';
     }catch(err){
@@ -1125,8 +1125,8 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     if(!dados.pedido){ showToast('Informe o número do pedido antes de salvar'); return; }
     if(dados.ordens.length === 0){ showToast('Adicione ao menos uma ordem de produção'); return; }
     try{
-      const { data: existente } = await window.sgeSupabase.from('pedidos').select('id').eq('numero', dados.pedido).maybeSingle();
-      if(existente && !(await sgeConfirmar('Já existe um pedido salvo com o número "' + dados.pedido + '". Deseja sobrescrever com as alterações atuais?'))){
+      const { data: existente } = await window.sgeSupabase.from('pedidos').select('id, deletado_em').eq('numero', dados.pedido).maybeSingle();
+      if(existente && !existente.deletado_em && !(await sgeConfirmar('Já existe um pedido salvo com o número "' + dados.pedido + '". Deseja sobrescrever com as alterações atuais?'))){
         return;
       }
 
@@ -1134,7 +1134,9 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
         numero: dados.pedido,
         referencia: dados.referencia,
         status: dados.status,
-        observacoes: dados.observacoes
+        observacoes: dados.observacoes,
+        deletado_em: null,
+        deletado_por: null
       }, { onConflict: 'numero' }).select().single();
       if(errPedido) throw errPedido;
 
@@ -1150,7 +1152,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
       dados.savedAt = pedidoRow.atualizado_em;
       pedidoState = dados;
       sgeRegistrarAuditoria('pedidos', pedidoRow.id, existente ? 'editar' : 'criar', null, { numero: dados.pedido, referencia: dados.referencia, status: dados.status });
-      showToast('Pedido ' + dados.pedido + ' salvo com sucesso');
+      showToast(existente && existente.deletado_em ? 'Pedido ' + dados.pedido + ' restaurado da lixeira e salvo' : 'Pedido ' + dados.pedido + ' salvo com sucesso');
       renderStatusBadge();
       refreshPedidosTable();
     }catch(err){
@@ -1162,7 +1164,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
   async function loadPedidoByNumero(pedido){
     if(!pedido){ showToast('Informe um número de pedido para carregar'); return false; }
     try{
-      const { data: pedidoRow, error } = await window.sgeSupabase.from('pedidos').select('*, ordens_producao(numero, quantidade, ordem)').eq('numero', pedido).maybeSingle();
+      const { data: pedidoRow, error } = await window.sgeSupabase.from('pedidos').select('*, ordens_producao(numero, quantidade, ordem)').eq('numero', pedido).is('deletado_em', null).maybeSingle();
       if(error || !pedidoRow){ showToast('Nenhum pedido encontrado para ' + pedido); return false; }
       const ordensOrdenadas = (pedidoRow.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0));
       const loaded = {
@@ -1205,7 +1207,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
 
   async function refreshPedidosTable(){
     try{
-      const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('*, ordens_producao(numero, quantidade, ordem)').order('numero', { ascending: false });
+      const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('*, ordens_producao(numero, quantidade, ordem)').is('deletado_em', null).order('numero', { ascending: false });
       if(error) throw error;
       pedidosCache = (rows || []).map(p => ({
         pedido: p.numero,
@@ -1270,12 +1272,13 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     pedidosTableBody.querySelectorAll('.pedido-excluir').forEach(btn => {
       btn.addEventListener('click', async () => {
         const numero = btn.getAttribute('data-pedido');
-        if(!(await sgeConfirmar('Tem certeza que deseja excluir o pedido "' + numero + '" e suas ordens de produção? Essa ação não pode ser desfeita.'))) return;
+        if(!(await sgeConfirmar('Mover o pedido "' + numero + '" para a lixeira? Você pode restaurar depois, se precisar.'))) return;
         try{
-          const { error } = await window.sgeSupabase.from('pedidos').delete().eq('numero', numero);
+          const perfil = await sgeGetPerfil();
+          const { error } = await window.sgeSupabase.from('pedidos').update({ deletado_em: new Date().toISOString(), deletado_por: perfil ? perfil.id : null }).eq('numero', numero);
           if(error) throw error;
           sgeRegistrarAuditoria('pedidos', numero, 'excluir', { numero: numero }, null);
-          showToast('Pedido ' + numero + ' excluído');
+          showToast('Pedido ' + numero + ' movido para a lixeira');
           refreshPedidosTable();
         }catch(err){
           showToast('Não foi possível excluir: ' + sgeMensagemErro(err));
@@ -1344,7 +1347,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     resultsEl.innerHTML = '<div class="search-loading">Buscando pedidos salvos...</div>';
 
     try{
-      const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('*, ordens_producao(numero, quantidade, ordem)');
+      const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('*, ordens_producao(numero, quantidade, ordem)').is('deletado_em', null);
       if(error) throw error;
       const items = (rows || []).map(p => ({
         pedido: p.numero, referencia: p.referencia, status: p.status,
@@ -1384,12 +1387,13 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
       });
       item.querySelector('.search-result-excluir').addEventListener('click', async (ev) => {
         ev.stopPropagation();
-        if(!(await sgeConfirmar('Tem certeza que deseja excluir o pedido "' + p.pedido + '"? Essa ação não pode ser desfeita.'))) return;
+        if(!(await sgeConfirmar('Mover o pedido "' + p.pedido + '" para a lixeira? Você pode restaurar depois, se precisar.'))) return;
         try{
-          const { error } = await window.sgeSupabase.from('pedidos').delete().eq('numero', p.pedido);
+          const perfil = await sgeGetPerfil();
+          const { error } = await window.sgeSupabase.from('pedidos').update({ deletado_em: new Date().toISOString(), deletado_por: perfil ? perfil.id : null }).eq('numero', p.pedido);
           if(error) throw error;
           sgeRegistrarAuditoria('pedidos', p.pedido, 'excluir', { numero: p.pedido }, null);
-          showToast('Pedido ' + p.pedido + ' excluído');
+          showToast('Pedido ' + p.pedido + ' movido para a lixeira');
           runSearch();
           refreshPedidosTable();
         }catch(err){

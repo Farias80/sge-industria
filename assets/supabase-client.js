@@ -173,3 +173,25 @@ async function sgeRegistrarAuditoria(tabela, registroId, acao, dadosAntes, dados
     console.error('[SGE] Não foi possível registrar auditoria para', tabela, registroId, e);
   }
 }
+
+/* ---------------- Lixeira (exclusão reversível) ----------------
+   Em vez de apagar de vez, marca o registro como excluído — ele some das
+   telas normais mas pode ser restaurado depois em lixeira.html.
+   Tabelas que usam isso: fichas, pedidos, fornecedores, produtos, receitas,
+   registros_qualidade.
+   Uso: const { error } = await sgeSoftDelete('fornecedores', id); */
+async function sgeSoftDelete(tabela, id){
+  const perfil = await sgeGetPerfil();
+  return await window.sgeSupabase.from(tabela).update({
+    deletado_em: new Date().toISOString(),
+    deletado_por: perfil ? perfil.id : null
+  }).eq('id', id);
+}
+
+// Uso: const { error } = await sgeRestaurar('fornecedores', id);
+async function sgeRestaurar(tabela, id){
+  return await window.sgeSupabase.from(tabela).update({
+    deletado_em: null,
+    deletado_por: null
+  }).eq('id', id);
+}

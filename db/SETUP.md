@@ -5,7 +5,12 @@
 2. Menu lateral → **SQL Editor** → **New query**
 3. Cole todo o conteúdo de `schema.sql` e clique em **Run**
 4. Cole e rode também `schema_02_trigger_novo_usuario.sql` (cria a linha em `perfis` automaticamente quando alguém é cadastrado em Authentication)
-5. Confira em **Table Editor** se as tabelas apareceram: `perfis`, `permissoes_setor`, `fichas`, `pedidos`, `fornecedores`, `produtos`, `receitas`, `receita_itens`, `registros_qualidade`, `auditoria`, etc.
+5. Cole e rode também `schema_03_ajustes_modulo03.sql` (colunas extras e um ajuste de regra usados pelo Módulo 03)
+6. Cole e rode também `schema_04_ajustes_modulo04.sql` (colunas extras usadas pelo Módulo 04)
+7. Cole e rode também `schema_05_responsavel_usuario_logado.sql` (o responsável técnico do Módulo 04 passou a ser sempre o usuário logado)
+8. Cole e rode também `schema_06_fix_recursao_rls.sql` (corrige um erro "stack depth limit exceeded" ao salvar)
+9. Cole e rode também `schema_07_status_qualidade_pedido.sql` (sinaliza aprovação/reprovação da Qualidade nos Módulos 02 e 03)
+10. Confira em **Table Editor** se as tabelas apareceram: `perfis`, `permissoes_setor`, `fichas`, `pedidos`, `fornecedores`, `produtos`, `receitas`, `receita_itens`, `registros_qualidade`, `auditoria`, etc.
 
 ## 2. Criar o bucket de imagens (opcional, recomendado)
 Menu lateral → **Storage** → **New bucket** → nome `sge-imagens` → marque **Public bucket**.
@@ -35,14 +40,43 @@ Já está garantida no banco: a tabela `receita_itens` exige `produto_id` (`not 
 - ✅ `admin.html` — painel do Administrador para liberar/revogar edição por setor
 - ✅ `modulo-00.html` — exige login, mostra nome/papel do usuário, mostra "Administração" só para admin
 - ✅ `modulo-dashboard.html` — os 6 indicadores agora leem direto das tabelas do Supabase
+- ✅ `modulo-01.html` (Artes) — fichas gravam no Supabase; excluir com confirmação; confirmação ao sobrescrever; modo somente leitura para quem não tem permissão no setor "arte"
+- ✅ `modulo-02.html` (Estamparia) — pedidos e ordens de produção gravam no Supabase; excluir com confirmação; modo somente leitura para quem não tem permissão no setor "estamparia"
+- ✅ `modulo-03.html` (Laboratório de Tinta) — fornecedores, estoque e receitas gravam no Supabase; editar/excluir com confirmação; regra de receita sem produto no estoque bloqueada; modo somente leitura para quem não tem permissão no setor "laboratorio"
+- ✅ `modulo-04.html` (Qualidade) — cadastros e responsáveis técnicos gravam no Supabase; editar/excluir com confirmação; modo somente leitura para quem não tem permissão no setor "qualidade"
 
-## 7. O que falta (próxima etapa)
-- Trocar `window.storage` por Supabase nos módulos **01 (Artes)**, **02 (Estamparia)**, **03 (Laboratório de Tinta)** e **04 (Qualidade)**
-- Adicionar botões Editar/Excluir com confirmação (`sgeConfirmar()`, já pronta em `assets/supabase-client.js`) nesses 4 módulos
-- Esconder/mostrar os botões de editar conforme `sgePodeEditar('arte' | 'estamparia' | 'laboratorio' | 'qualidade')`
-- Gravar cada edição/exclusão na tabela `auditoria`
+**Todos os 5 módulos + dashboard + login + admin estão migrados para o Supabase.**
 
-Isso é feito módulo a módulo para não arriscar quebrar o que já funciona.
+## 7. O que já foi feito na rodada de melhorias
+- ✅ Auditoria: toda edição/exclusão em fornecedores, produtos, receitas, fichas, pedidos e cadastros de qualidade fica registrada na tabela `auditoria`
+- ✅ Avisos padronizados (toast) em todos os módulos, no lugar do `alert()` do navegador
+- ✅ "Esqueci minha senha" na tela de login + página `redefinir-senha.html`
+- ✅ Mensagens de erro mais claras quando falta conexão com a internet (antivírus/proxy bloqueando)
+
+## 8. Configuração necessária para "Esqueci minha senha" funcionar
+1. Supabase → seu projeto → **Authentication → URL Configuration**
+2. Em **Redirect URLs**, adicione:
+   ```
+   https://sge-industria.vercel.app/redefinir-senha.html
+   ```
+   (troque pelo domínio real, se for diferente)
+3. Salve. Sem isso, o Supabase recusa o redirecionamento e o link do e-mail não abre a página certa.
+4. Confira também se em **Authentication → Emails** o modelo "Reset Password" está ativado (vem ativado por padrão).
+
+## 9. Lixeira (exclusão reversível)
+- **Rode `schema_08_lixeira.sql`** no SQL Editor do Supabase — sem isso a Lixeira não funciona
+- Ao "excluir" fichas, pedidos, fornecedores, produtos, receitas ou cadastros de qualidade, o item some das telas normais mas fica guardado
+- Nova página **`lixeira.html`** — mostra tudo que foi excluído, agrupado por módulo, com botão **Restaurar**
+- Restaurar/apagar em definitivo exige a mesma permissão de edição do setor daquele item (ou ser Administrador)
+- Apagar em definitivo é exclusivo do Administrador, com dupla confirmação
+- Receitas têm um cuidado especial: excluir devolve a matéria-prima ao estoque; restaurar desconta de novo (e bloqueia se não tiver estoque suficiente no momento)
+- Link "Lixeira" já está no menu inicial (`modulo-00.html`)
+
+## 10. O que ainda pode ser refinado (não bloqueia o uso)
+- Trocar o vínculo "texto" (pedido_numero, responsavel_nome) por FK obrigatória em todo lugar, agora que todos os módulos existem no banco
+- Migrar as imagens (hoje em base64 dentro do jsonb) para o Storage do Supabase, se o volume de fotos crescer muito
+- Testar o fluxo ponta a ponta com mais de um usuário ao mesmo tempo
+- Rotina automática para esvaziar a lixeira após X dias (hoje é só manual, pelo Administrador)
 
 ## Credenciais para o próximo passo
 Guarde estas duas informações — vou usar para conectar o app:

@@ -140,6 +140,7 @@ main{
 }
 .new-user:hover .icon-circle{border-color:var(--indigo-600);color:var(--indigo-600);}
 .new-user .icon-circle svg{width:16px;height:16px;}
+.new-user .icon-circle{margin-right:2px;}
 
 footer{
   text-align:center;padding:18px 0;color:var(--text-muted);font-size:12px;
@@ -202,12 +203,20 @@ footer a:hover{color:var(--indigo-600);border-color:var(--indigo-600);}
     </div>
   </div>
 
-  <button class="new-user" id="btnAdmin" style="display:none;" onclick="window.location.href='admin.html'" title="Administração de usuários">
-    <span class="icon-circle">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>
-    </span>
-    Administração
-  </button>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+    <button class="new-user" onclick="window.location.href='lixeira.html'" title="Lixeira — itens excluídos">
+      <span class="icon-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      </span>
+      Lixeira
+    </button>
+    <button class="new-user" id="btnAdmin" style="display:none;" onclick="window.location.href='admin.html'" title="Administração de usuários">
+      <span class="icon-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>
+      </span>
+      Administração
+    </button>
+  </div>
 </main>
 
 <footer><a href="modulo-dashboard.html">Sistema SGE v1.0</a> · by&nbsp;2026</footer>

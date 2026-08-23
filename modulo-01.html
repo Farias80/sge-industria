@@ -1127,14 +1127,14 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     }
     state.reference = ref;
     try{
-      const { data: existente } = await window.sgeSupabase.from('fichas').select('id').eq('referencia', ref).maybeSingle();
-      if(existente && !(await sgeConfirmar('Já existe uma ficha salva com a referência "' + ref + '". Deseja sobrescrever com as alterações atuais?'))){
+      const { data: existente } = await window.sgeSupabase.from('fichas').select('id, deletado_em').eq('referencia', ref).maybeSingle();
+      if(existente && !existente.deletado_em && !(await sgeConfirmar('Já existe uma ficha salva com a referência "' + ref + '". Deseja sobrescrever com as alterações atuais?'))){
         return;
       }
-      const { data: salvo, error } = await window.sgeSupabase.from('fichas').upsert({ referencia: ref, dados: state }, { onConflict: 'referencia' }).select().single();
+      const { data: salvo, error } = await window.sgeSupabase.from('fichas').upsert({ referencia: ref, dados: state, deletado_em: null, deletado_por: null }, { onConflict: 'referencia' }).select().single();
       if(error) throw error;
       sgeRegistrarAuditoria('fichas', salvo.id, existente ? 'editar' : 'criar', null, { referencia: ref });
-      showToast('Ficha ' + ref + ' salva com sucesso');
+      showToast(existente && existente.deletado_em ? 'Ficha ' + ref + ' restaurada da lixeira e salva' : 'Ficha ' + ref + ' salva com sucesso');
       refreshRecentList();
     }catch(err){
       console.error(err);
@@ -1145,7 +1145,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
   async function loadFichaByRef(ref){
     if(!ref){ showToast('Informe uma referência para carregar'); return false; }
     try{
-      const { data: row, error } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', ref).maybeSingle();
+      const { data: row, error } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', ref).is('deletado_em', null).maybeSingle();
       if(error || !row){ showToast('Nenhuma ficha encontrada para ' + ref); return false; }
       const loaded = row.dados;
       state = Object.assign({ reference:'', estampas:[makeEstampa()], tagless:{image:null,addedAt:null,technique:'tampografia',description:'',pantones:[makePantone()]}, observacoes:'' }, loaded);
@@ -1188,7 +1188,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
 
   async function refreshRecentList(){
     try{
-      const { data: rows, error } = await window.sgeSupabase.from('fichas').select('referencia, atualizado_em').order('atualizado_em', { ascending: false }).limit(4);
+      const { data: rows, error } = await window.sgeSupabase.from('fichas').select('referencia, atualizado_em').is('deletado_em', null).order('atualizado_em', { ascending: false }).limit(4);
       if(error) throw error;
       if(!rows || rows.length === 0){
         recentList.innerHTML = '<div class="recent-empty">Nenhuma ficha salva ainda. <a href="#" onclick="document.getElementById(\'refInput\').focus();return false;" style="color:var(--indigo-600);font-weight:600;text-decoration:none;">Criar a primeira →</a></div>';
@@ -1221,12 +1221,13 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
       el.querySelector('.recent-item-open').addEventListener('click', () => loadFichaByRef(item.ref));
       el.querySelector('.recent-item-excluir').addEventListener('click', async (ev) => {
         ev.stopPropagation();
-        if(!(await sgeConfirmar('Tem certeza que deseja excluir a ficha "' + item.ref + '"? Essa ação não pode ser desfeita.'))) return;
+        if(!(await sgeConfirmar('Mover a ficha "' + item.ref + '" para a lixeira? Você pode restaurar depois, se precisar.'))) return;
         try{
-          const { error } = await window.sgeSupabase.from('fichas').delete().eq('referencia', item.ref);
+          const perfil = await sgeGetPerfil();
+          const { error } = await window.sgeSupabase.from('fichas').update({ deletado_em: new Date().toISOString(), deletado_por: perfil ? perfil.id : null }).eq('referencia', item.ref);
           if(error) throw error;
           sgeRegistrarAuditoria('fichas', item.ref, 'excluir', { referencia: item.ref }, null);
-          showToast('Ficha ' + item.ref + ' excluída');
+          showToast('Ficha ' + item.ref + ' movida para a lixeira');
           refreshRecentList();
         }catch(err){
           showToast('Não foi possível excluir: ' + sgeMensagemErro(err));
@@ -1305,7 +1306,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     resultsEl.innerHTML = '<div class="search-loading">Buscando fichas salvas...</div>';
 
     try{
-      const { data: rows, error } = await window.sgeSupabase.from('fichas').select('dados');
+      const { data: rows, error } = await window.sgeSupabase.from('fichas').select('dados').is('deletado_em', null);
       if(error) throw error;
       const matches = (rows || []).map(r => r.dados).filter(f => f && fichaMatches(f, filters));
       renderSearchResults(matches);
@@ -1344,12 +1345,13 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
       });
       item.querySelector('.search-result-excluir').addEventListener('click', async (ev) => {
         ev.stopPropagation();
-        if(!(await sgeConfirmar('Tem certeza que deseja excluir a ficha "' + f.reference + '"? Essa ação não pode ser desfeita.'))) return;
+        if(!(await sgeConfirmar('Mover a ficha "' + f.reference + '" para a lixeira? Você pode restaurar depois, se precisar.'))) return;
         try{
-          const { error } = await window.sgeSupabase.from('fichas').delete().eq('referencia', f.reference);
+          const perfil = await sgeGetPerfil();
+          const { error } = await window.sgeSupabase.from('fichas').update({ deletado_em: new Date().toISOString(), deletado_por: perfil ? perfil.id : null }).eq('referencia', f.reference);
           if(error) throw error;
           sgeRegistrarAuditoria('fichas', f.reference, 'excluir', { referencia: f.reference }, null);
-          showToast('Ficha ' + f.reference + ' excluída');
+          showToast('Ficha ' + f.reference + ' movida para a lixeira');
           runSearch();
           refreshRecentList();
         }catch(err){

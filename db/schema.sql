@@ -293,58 +293,85 @@ alter table registros_qualidade enable row level security;
 alter table auditoria enable row level security;
 
 -- perfis: cada um vê o próprio; admin vê todos
+drop policy if exists "perfis_select" on perfis;
 create policy "perfis_select" on perfis for select
   using (id = auth.uid() or eh_admin());
+drop policy if exists "perfis_update_admin" on perfis;
 create policy "perfis_update_admin" on perfis for update
   using (eh_admin());
+drop policy if exists "perfis_insert_admin" on perfis;
 create policy "perfis_insert_admin" on perfis for insert
   with check (eh_admin() or id = auth.uid());
 
 -- permissoes_setor: usuário vê a sua; só admin cria/edita/apaga
+drop policy if exists "permissoes_select" on permissoes_setor;
 create policy "permissoes_select" on permissoes_setor for select
   using (usuario_id = auth.uid() or eh_admin());
+drop policy if exists "permissoes_admin_all" on permissoes_setor;
 create policy "permissoes_admin_all" on permissoes_setor for all
   using (eh_admin()) with check (eh_admin());
 
 -- Leitura liberada para qualquer usuário autenticado em todas as tabelas de negócio
+drop policy if exists "fichas_select" on fichas;
 create policy "fichas_select" on fichas for select using (auth.uid() is not null);
+drop policy if exists "ficha_pantones_select" on ficha_pantones;
 create policy "ficha_pantones_select" on ficha_pantones for select using (auth.uid() is not null);
+drop policy if exists "pedidos_select" on pedidos;
 create policy "pedidos_select" on pedidos for select using (auth.uid() is not null);
+drop policy if exists "ordens_producao_select" on ordens_producao;
 create policy "ordens_producao_select" on ordens_producao for select using (auth.uid() is not null);
+drop policy if exists "fornecedores_select" on fornecedores;
 create policy "fornecedores_select" on fornecedores for select using (auth.uid() is not null);
+drop policy if exists "produtos_select" on produtos;
 create policy "produtos_select" on produtos for select using (auth.uid() is not null);
+drop policy if exists "receitas_select" on receitas;
 create policy "receitas_select" on receitas for select using (auth.uid() is not null);
+drop policy if exists "receita_itens_select" on receita_itens;
 create policy "receita_itens_select" on receita_itens for select using (auth.uid() is not null);
+drop policy if exists "responsaveis_qualidade_select" on responsaveis_qualidade;
 create policy "responsaveis_qualidade_select" on responsaveis_qualidade for select using (auth.uid() is not null);
+drop policy if exists "registros_qualidade_select" on registros_qualidade;
 create policy "registros_qualidade_select" on registros_qualidade for select using (auth.uid() is not null);
 
 -- Escrita (insert/update/delete) só para quem tem permissão no setor correspondente
+drop policy if exists "fichas_write" on fichas;
 create policy "fichas_write" on fichas for all
   using (tem_permissao_setor('arte')) with check (tem_permissao_setor('arte'));
+drop policy if exists "ficha_pantones_write" on ficha_pantones;
 create policy "ficha_pantones_write" on ficha_pantones for all
   using (tem_permissao_setor('arte')) with check (tem_permissao_setor('arte'));
 
+drop policy if exists "pedidos_write" on pedidos;
 create policy "pedidos_write" on pedidos for all
   using (tem_permissao_setor('estamparia')) with check (tem_permissao_setor('estamparia'));
+drop policy if exists "ordens_producao_write" on ordens_producao;
 create policy "ordens_producao_write" on ordens_producao for all
   using (tem_permissao_setor('estamparia')) with check (tem_permissao_setor('estamparia'));
 
+drop policy if exists "fornecedores_write" on fornecedores;
 create policy "fornecedores_write" on fornecedores for all
   using (tem_permissao_setor('laboratorio')) with check (tem_permissao_setor('laboratorio'));
+drop policy if exists "produtos_write" on produtos;
 create policy "produtos_write" on produtos for all
   using (tem_permissao_setor('laboratorio')) with check (tem_permissao_setor('laboratorio'));
+drop policy if exists "receitas_write" on receitas;
 create policy "receitas_write" on receitas for all
   using (tem_permissao_setor('laboratorio')) with check (tem_permissao_setor('laboratorio'));
+drop policy if exists "receita_itens_write" on receita_itens;
 create policy "receita_itens_write" on receita_itens for all
   using (tem_permissao_setor('laboratorio')) with check (tem_permissao_setor('laboratorio'));
 
+drop policy if exists "responsaveis_qualidade_write" on responsaveis_qualidade;
 create policy "responsaveis_qualidade_write" on responsaveis_qualidade for all
   using (tem_permissao_setor('qualidade')) with check (tem_permissao_setor('qualidade'));
+drop policy if exists "registros_qualidade_write" on registros_qualidade;
 create policy "registros_qualidade_write" on registros_qualidade for all
   using (tem_permissao_setor('qualidade')) with check (tem_permissao_setor('qualidade'));
 
 -- auditoria: qualquer autenticado insere (o próprio app grava o log); só admin lê tudo
+drop policy if exists "auditoria_insert" on auditoria;
 create policy "auditoria_insert" on auditoria for insert with check (auth.uid() is not null);
+drop policy if exists "auditoria_select_admin" on auditoria;
 create policy "auditoria_select_admin" on auditoria for select using (eh_admin());
 
 -- ---------------------------------------------------------------------

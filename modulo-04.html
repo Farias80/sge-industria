@@ -771,7 +771,7 @@ async function salvarRegistroNoBanco(reg){
     let pedidoId = null;
     if(reg.pedido){
       try{
-        const { data: pedidoRow } = await window.sgeSupabase.from('pedidos').select('id').eq('numero', reg.pedido).maybeSingle();
+        const { data: pedidoRow } = await window.sgeSupabase.from('pedidos').select('id').eq('numero', reg.pedido).is('deletado_em', null).maybeSingle();
         if(pedidoRow) pedidoId = pedidoRow.id;
       }catch(e){ /* pedido pode não existir ainda */ }
     }
@@ -829,7 +829,7 @@ async function carregarDadosDoBanco(){
   perfilAtual = await sgeGetPerfil();
 
   try{
-    const { data: rows, error } = await window.sgeSupabase.from('registros_qualidade').select('*').order('criado_em');
+    const { data: rows, error } = await window.sgeSupabase.from('registros_qualidade').select('*').is('deletado_em', null).order('criado_em');
     if(error) throw error;
     registros = (rows || []).map(r => ({
       id: r.id,
@@ -936,7 +936,7 @@ async function carregarImagensAmostraDoModulo01(ref){
   const hint = document.getElementById('refHint');
   let ficha = null;
   try{
-    const { data: row } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', ref).maybeSingle();
+    const { data: row } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', ref).is('deletado_em', null).maybeSingle();
     ficha = row ? row.dados : null;
   }catch(e){
     ficha = null;
@@ -1019,7 +1019,7 @@ function onPedidoChange(){
 async function carregarOPsDoModulo02(pedido){
   if(pedido === pedidoCarregadoOps) return; // já carregado, evita sobrescrever edições manuais
   try{
-    const { data: row } = await window.sgeSupabase.from('pedidos').select('referencia, ordens_producao(numero, quantidade, ordem)').eq('numero', pedido).maybeSingle();
+    const { data: row } = await window.sgeSupabase.from('pedidos').select('referencia, ordens_producao(numero, quantidade, ordem)').eq('numero', pedido).is('deletado_em', null).maybeSingle();
     const dadosPedido = row ? { referencia: row.referencia, ordens: (row.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0)) } : null;
     if(dadosPedido && Array.isArray(dadosPedido.ordens) && dadosPedido.ordens.length){
       ops = dadosPedido.ordens
@@ -1415,15 +1415,16 @@ function runSearch(){
 async function excluirRegistro(id){
   const reg = registros.find(x=>x.id===id);
   if(!reg) return;
-  if(!(await sgeConfirmar('Excluir o cadastro da referência ' + (reg.referencia||'—') + ' (Pedido ' + (reg.pedido||'—') + ')? Esta ação não pode ser desfeita.'))) return;
+  if(!(await sgeConfirmar('Mover o cadastro da referência ' + (reg.referencia||'—') + ' (Pedido ' + (reg.pedido||'—') + ') para a lixeira? Você pode restaurar depois, se precisar.'))) return;
   try{
-    await window.sgeSupabase.from('registros_qualidade').delete().eq('id', id);
+    const { error } = await sgeSoftDelete('registros_qualidade', id);
+    if(error) throw error;
     sgeRegistrarAuditoria('registros_qualidade', id, 'excluir', { referencia: reg.referencia, pedido: reg.pedido }, null);
   }catch(e){ console.error('Falha ao excluir cadastro', e); }
   registros = registros.filter(x=>x.id!==id);
   if(idEmEdicao===id) idEmEdicao = null;
   runSearch();
-  toast('Cadastro excluído.');
+  toast('Cadastro movido para a lixeira.');
 }
 function clearSearch(){
   document.getElementById('sRef').value='';

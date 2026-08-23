@@ -1263,9 +1263,14 @@
             return row.id;
         };
 
+        // Tabelas que usam a Lixeira (exclusão reversível) em vez de apagar de vez
+        const SOFT_DELETAVEIS = ['fornecedores', 'produtos', 'receitas'];
+
         const getAllData = async (storeName) => {
             const cfg = STORE_MAP[storeName];
-            const { data: rows, error } = await window.sgeSupabase.from(cfg.table).select('*').order('id');
+            let query = window.sgeSupabase.from(cfg.table).select('*').order('id');
+            if (SOFT_DELETAVEIS.includes(storeName)) query = query.is('deletado_em', null);
+            const { data: rows, error } = await query;
             if (error) { console.error('Erro ao listar', storeName, error); return []; }
             return (rows || []).map(cfg.fromDb);
         };
@@ -1294,6 +1299,11 @@
 
         const deleteData = async (storeName, id) => {
             const cfg = STORE_MAP[storeName];
+            if (SOFT_DELETAVEIS.includes(storeName)) {
+                const { error } = await sgeSoftDelete(cfg.table, id);
+                if (error) { console.error('Erro ao mover para a lixeira', storeName, error); throw error; }
+                return id;
+            }
             const { error } = await window.sgeSupabase.from(cfg.table).delete().eq('id', id);
             if (error) { console.error('Erro ao excluir em', storeName, error); throw error; }
             return id;
@@ -1481,7 +1491,7 @@
                 // Status de qualidade de cada pedido (Módulo 04), pra sinalizar aqui também
                 let qualidadePorPedido = {};
                 try {
-                    const { data: pedidosRows } = await window.sgeSupabase.from('pedidos').select('numero, status_qualidade');
+                    const { data: pedidosRows } = await window.sgeSupabase.from('pedidos').select('numero, status_qualidade').is('deletado_em', null);
                     (pedidosRows || []).forEach(p => { qualidadePorPedido[p.numero] = p.status_qualidade; });
                 } catch (e) { /* segue sem o selo se não conseguir buscar */ }
                 
@@ -1582,7 +1592,7 @@
 
         const carregarPedidosDoModulo02 = async () => {
             try {
-                const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('numero, referencia, status, status_qualidade');
+                const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('numero, referencia, status, status_qualidade').is('deletado_em', null);
                 if (error) throw error;
                 const items = (rows || []).map(r => ({ pedido: r.numero, referencia: r.referencia, status: r.status, statusQualidade: r.status_qualidade || 'pendente' }));
                 items.sort((a, b) => (a.status === 'concluida') - (b.status === 'concluida') || (b.pedido||'').localeCompare(a.pedido||''));
@@ -1651,7 +1661,7 @@
                 return;
             }
             try {
-                const { data: row } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', referencia).maybeSingle();
+                const { data: row } = await window.sgeSupabase.from('fichas').select('dados').eq('referencia', referencia).is('deletado_em', null).maybeSingle();
                 fichaVinculadaReceita = row ? row.dados : null;
             } catch (e) {
                 fichaVinculadaReceita = null;
@@ -1732,7 +1742,7 @@
         const marcarPedidoConcluido = async (numeroPedido) => {
             if (!numeroPedido) return;
             try {
-                const { data: pedido } = await window.sgeSupabase.from('pedidos').select('id, status').eq('numero', numeroPedido).maybeSingle();
+                const { data: pedido } = await window.sgeSupabase.from('pedidos').select('id, status').eq('numero', numeroPedido).is('deletado_em', null).maybeSingle();
                 if (!pedido || pedido.status === 'concluida') return;
                 await window.sgeSupabase.from('pedidos').update({ status: 'concluida' }).eq('id', pedido.id);
                 await carregarPedidosDoModulo02();
@@ -2258,12 +2268,12 @@
         };
         
         const excluirFornecedor = async (id) => {
-            if (await sgeConfirmar('Tem certeza que deseja excluir este fornecedor? Essa ação não pode ser desfeita.')) {
+            if (await sgeConfirmar('Mover este fornecedor para a lixeira? Você pode restaurar depois, se precisar.')) {
                 try {
                     const fornecedorAntigo = await getDataById('fornecedores', parseInt(id));
                     await deleteData('fornecedores', parseInt(id));
                     sgeRegistrarAuditoria('fornecedores', id, 'excluir', fornecedorAntigo, null);
-                    sgeToast('Fornecedor excluído com sucesso!');
+                    sgeToast('Fornecedor movido para a lixeira.');
                     await carregarFornecedores();
                 } catch (error) {
                     console.error('Erro ao excluir fornecedor:', error);
@@ -2293,12 +2303,12 @@
         };
         
         const excluirProduto = async (id) => {
-            if (await sgeConfirmar('Tem certeza que deseja excluir este produto do estoque? Essa ação não pode ser desfeita.')) {
+            if (await sgeConfirmar('Mover este produto do estoque para a lixeira? Você pode restaurar depois, se precisar.')) {
                 try {
                     const produtoAntigo = await getDataById('produtos', parseInt(id));
                     await deleteData('produtos', parseInt(id));
                     sgeRegistrarAuditoria('produtos', id, 'excluir', produtoAntigo, null);
-                    sgeToast('Produto excluído com sucesso!');
+                    sgeToast('Produto movido para a lixeira.');
                     await carregarProdutos();
                 } catch (error) {
                     console.error('Erro ao excluir produto:', error);
@@ -2984,12 +2994,13 @@
         };
         
         const excluirReceita = async (id) => {
-            if (await sgeConfirmar('Tem certeza que deseja excluir esta receita e as matérias-primas/coloração associadas? Essa ação não pode ser desfeita.')) {
+            if (await sgeConfirmar('Mover esta receita para a lixeira? A matéria-prima/coloração usada será devolvida ao estoque, e você pode restaurar depois.')) {
                 try {
                     const receitaAntiga = await getDataById('receitas', parseInt(id));
 
                     // Devolve ao estoque a quantidade que cada item desta receita consumia,
-                    // antes de excluir — senão o estoque fica "faltando" essa quantidade para sempre.
+                    // já que ela deixa de estar "ativa". Os itens NÃO são apagados — ficam
+                    // guardados para o caso de a receita ser restaurada da lixeira depois.
                     const materiasPrimas = await getDataByIndex('materiasPrimas', 'receitaId', parseInt(id));
                     for (const materia of materiasPrimas) {
                         const produtoAntigo = await getDataById('produtos', materia.produtoId);
@@ -2999,14 +3010,13 @@
                                 quantidade: (produtoAntigo.quantidade || 0) + (materia.quantidade || 0)
                             });
                         }
-                        await deleteData('materiasPrimas', materia.id);
                     }
                     
-                    // Depois excluir a receita
+                    // Move a receita para a lixeira (fica escondida, mas não é apagada)
                     await deleteData('receitas', parseInt(id));
                     sgeRegistrarAuditoria('receitas', id, 'excluir', receitaAntiga, null);
                     
-                    sgeToast('Receita excluída com sucesso! O estoque usado por ela foi devolvido.');
+                    sgeToast('Receita movida para a lixeira. O estoque usado por ela foi devolvido.');
                     await carregarReceitas();
                     await carregarProdutos();
                     
