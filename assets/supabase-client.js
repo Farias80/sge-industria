@@ -2,12 +2,17 @@
    SGE — Cliente Supabase compartilhado + helpers de autenticação/permissão
    Incluir em toda página (depois do script da CDN do supabase-js):
 
-   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
    <script src="assets/supabase-client.js"></script>
    ===================================================================== */
 
 const SGE_SUPABASE_URL = 'https://uqxyogatphxpwszyryac.supabase.co';
 const SGE_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHlvZ2F0cGh4cHdzenlyeWFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4ODg0MzEsImV4cCI6MjA5OTQ2NDQzMX0.UIBuMvI54lVVu-ncEjTzGn-RIz2OwjBM7eqAYe9bdbo';
+
+if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+  console.error('[SGE] A biblioteca do Supabase (supabase-js) não carregou. Verifique se o <script> da CDN está ANTES de assets/supabase-client.js na página, e se a internet/CDN não está bloqueada.');
+  alert('Não foi possível carregar a conexão com o banco de dados (Supabase). Recarregue a página; se o problema continuar, avise o administrador.');
+}
 
 window.sgeSupabase = window.supabase.createClient(SGE_SUPABASE_URL, SGE_SUPABASE_ANON_KEY);
 
@@ -104,5 +109,67 @@ function sgeMensagemErro(error){
   if(!error) return 'Erro desconhecido.';
   if(error.code === '23503') return 'Não é possível salvar: um item vinculado (ex: produto do estoque) não foi encontrado. Cadastre-o antes de salvar.';
   if(error.code === '23505') return 'Já existe um registro com esse identificador único.';
+  const msg = (error.message || '').toLowerCase();
+  if(msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed')){
+    return 'Não foi possível conectar ao servidor. Verifique sua internet — se o problema continuar, pode ser um antivírus ou proxy da rede bloqueando a conexão (peça ajuda ao TI da empresa).';
+  }
   return error.message || 'Não foi possível concluir a operação.';
+}
+
+/* ---------------- Aviso padronizado (toast) ----------------
+   Uso: sgeToast('Fornecedor salvo com sucesso!')                 -> sucesso (padrão)
+        sgeToast('Não foi possível excluir.', 'erro')             -> erro
+        sgeToast('Carregando dados...', 'info')                   -> neutro
+   Não bloqueia a tela (diferente de alert()) e some sozinho. */
+let __sgeToastTimer = null;
+function sgeToast(mensagem, tipo){
+  tipo = tipo || 'sucesso';
+  let el = document.getElementById('sgeToast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'sgeToast';
+    el.style.cssText = 'position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:#0E1638;color:#fff;padding:11px 20px;border-radius:10px;font:600 13.5px Inter,system-ui,sans-serif;opacity:0;pointer-events:none;transition:.25s ease;display:flex;align-items:center;gap:9px;z-index:99998;max-width:min(90vw,420px);box-shadow:0 12px 30px -10px rgba(14,22,56,.5);';
+    el.innerHTML = '<span id="sgeToastIcon" style="display:flex;flex-shrink:0;"></span><span id="sgeToastText"></span>';
+    document.body.appendChild(el);
+  }
+  const icones = {
+    sucesso: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#1C9A6C" stroke-width="2.6"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>',
+    erro: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#F06A66" stroke-width="2.6"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>',
+    info: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#8B93D9" stroke-width="2.6"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>'
+  };
+  document.getElementById('sgeToastIcon').innerHTML = icones[tipo] || icones.sucesso;
+  document.getElementById('sgeToastText').textContent = mensagem;
+  el.style.opacity = '1';
+  el.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(__sgeToastTimer);
+  __sgeToastTimer = setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(-50%) translateY(20px)';
+  }, tipo === 'erro' ? 4200 : 2600);
+}
+
+/* ---------------- Auditoria ----------------
+   Registra quem criou/editou/excluiu o quê e quando, na tabela `auditoria`.
+   Nunca trava a ação principal: se a auditoria falhar (ex: sem internet por
+   um instante), só avisa no console e segue o fluxo normalmente.
+   Uso: sgeRegistrarAuditoria('fornecedores', novoId, 'criar', null, dadosNovos)
+        sgeRegistrarAuditoria('receitas', id, 'editar', dadosAntes, dadosDepois)
+        sgeRegistrarAuditoria('produtos', id, 'excluir', dadosAntigos, null) */
+async function sgeRegistrarAuditoria(tabela, registroId, acao, dadosAntes, dadosDepois){
+  try{
+    const perfil = await sgeGetPerfil();
+    const { error } = await window.sgeSupabase.from('auditoria').insert({
+      tabela: tabela,
+      registro_id: String(registroId),
+      acao: acao,
+      usuario_id: perfil ? perfil.id : null,
+      dados_antes: dadosAntes || null,
+      dados_depois: dadosDepois || null
+    });
+    if(error){
+      console.error('[SGE] Falha ao gravar auditoria para', tabela, registroId, '—', error.message, error);
+    }
+  }catch(e){
+    console.error('[SGE] Não foi possível registrar auditoria para', tabela, registroId, e);
+  }
 }
