@@ -12,7 +12,7 @@
 :root{
   --navy-900:#0E1638;--navy-800:#141F4D;--indigo-600:#5B4FE8;--indigo-500:#6E63EE;
   --bg:#EEF1F8;--card:#FFFFFF;--border:#E1E4F0;--text:#161A3B;--text-muted:#6A6F94;
-  --danger:#DC3630;--danger-50:#FCEAE9;--radius:14px;
+  --danger:#DC3630;--danger-50:#FCEAE9;--ok:#1C9A6C;--ok-50:#E7F7F1;--radius:18px;
   --shadow:0 1px 2px rgba(20,25,70,.04), 0 8px 24px -12px rgba(20,25,70,.12);
 }
 *{box-sizing:border-box;}
@@ -24,63 +24,83 @@ body{
 }
 .box{
   background:var(--card);border-radius:var(--radius);box-shadow:0 30px 80px -30px rgba(0,0,0,.5);
-  padding:36px 32px;max-width:380px;width:100%;
+  padding:36px 32px 30px;max-width:380px;width:100%;
 }
-h1{font-family:'Sora',sans-serif;font-weight:800;font-size:22px;color:var(--navy-900);margin:0 0 4px;}
-.sub{font-size:13px;color:var(--text-muted);margin-bottom:26px;}
-label{font-family:'Sora',sans-serif;font-weight:700;font-size:12.5px;color:var(--navy-900);display:block;margin-bottom:6px;}
+.logo-wrap{display:flex;justify-content:center;margin-bottom:14px;}
+.logo-wrap img{width:96px;height:96px;object-fit:contain;}
+h1{
+  font-family:'Sora',sans-serif;font-weight:800;font-size:24px;color:var(--navy-900);margin:0 0 2px;
+  text-align:center;letter-spacing:.01em;
+}
+.sub{
+  font-size:12.5px;color:var(--text-muted);margin-bottom:24px;text-align:center;font-style:italic;
+}
+label{
+  font-family:'Sora',sans-serif;font-weight:700;font-size:11px;color:var(--navy-900);display:block;
+  margin-bottom:7px;text-transform:uppercase;letter-spacing:.06em;
+}
 input{
-  width:100%;padding:11px 13px;border-radius:9px;border:1px solid var(--border);font-size:14px;
-  color:var(--text);margin-bottom:16px;font-family:'Inter',sans-serif;
+  width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);font-size:14px;
+  color:var(--text);margin-bottom:18px;font-family:'Inter',sans-serif;background:#F6F8F4;
 }
-input:focus{outline:2px solid var(--indigo-500);outline-offset:1px;border-color:transparent;}
+input::placeholder{color:#A6ADC7;}
+input:focus{outline:2px solid var(--indigo-500);outline-offset:1px;border-color:transparent;background:#fff;}
 button{
-  width:100%;background:var(--indigo-600);color:#fff;border:none;padding:12px;border-radius:10px;
-  font-family:'Sora',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:background .15s ease;
+  width:100%;background:var(--navy-900);color:#fff;border:none;padding:13px;border-radius:11px;
+  font-family:'Sora',sans-serif;font-weight:700;font-size:14.5px;cursor:pointer;transition:background .15s ease;
+  display:flex;align-items:center;justify-content:center;gap:9px;
 }
-button:hover{background:var(--indigo-500);}
+button:hover{background:var(--navy-800);}
 button:disabled{opacity:.6;cursor:not-allowed;}
+button svg{width:17px;height:17px;margin-right:2px;}
 .error{
   background:var(--danger-50);color:var(--danger);border:1px solid #F6D3D1;border-radius:9px;
   padding:10px 12px;font-size:12.5px;margin-bottom:16px;display:none;
 }
 .error.show{display:block;}
 .success{
-  background:var(--ok-50, #E7F7F1);color:var(--ok, #1C9A6C);border:1px solid #CDEEE0;border-radius:9px;
+  background:var(--ok-50);color:var(--ok);border:1px solid #CDEEE0;border-radius:9px;
   padding:10px 12px;font-size:12.5px;margin-bottom:16px;display:none;
 }
 .success.show{display:block;}
-.foot{text-align:center;margin-top:18px;font-size:11.5px;color:var(--text-muted);}
+.foot{text-align:center;margin-top:20px;font-size:11px;color:var(--text-muted);}
+.foot a{color:var(--text-muted);}
+.links{text-align:center;margin-top:14px;}
+.links a{font-size:12.5px;color:var(--indigo-600);text-decoration:none;font-weight:600;}
 </style>
 </head>
 <body>
 
 <div class="box">
+  <div class="logo-wrap"><img src="assets/logo/logo-color.png" alt="SGE"></div>
   <h1>SGE</h1>
-  <div class="sub" id="subText">Entre com seu e-mail e senha cadastrados pelo administrador.</div>
+  <div class="sub" id="subText">Sistema de Gestão de Estampa</div>
   <div class="error" id="errorBox"></div>
   <div class="success" id="successBox"></div>
 
   <form id="formLogin">
     <label for="email">E-mail</label>
-    <input type="email" id="email" required autocomplete="username">
+    <input type="email" id="email" placeholder="Digite seu e-mail" required autocomplete="username">
     <label for="senha">Senha</label>
-    <input type="password" id="senha" required autocomplete="current-password">
-    <button type="submit" id="btnEntrar">Entrar</button>
+    <input type="password" id="senha" placeholder="Digite sua senha" required autocomplete="current-password">
+    <button type="submit" id="btnEntrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
+      Entrar
+    </button>
   </form>
 
   <form id="formRecuperar" style="display:none;">
     <label for="emailRecuperar">E-mail cadastrado</label>
-    <input type="email" id="emailRecuperar" required autocomplete="username">
+    <input type="email" id="emailRecuperar" placeholder="Digite seu e-mail" required autocomplete="username">
     <button type="submit" id="btnRecuperar">Enviar link de redefinição</button>
   </form>
 
-  <div style="text-align:center;margin-top:14px;">
-    <a href="#" id="linkEsqueci" style="font-size:12.5px;color:var(--indigo-600);text-decoration:none;font-weight:600;">Esqueci minha senha</a>
-    <a href="#" id="linkVoltar" style="font-size:12.5px;color:var(--indigo-600);text-decoration:none;font-weight:600;display:none;">Voltar para o login</a>
+  <div class="links">
+    <a href="#" id="linkEsqueci">Esqueci minha senha</a>
+    <a href="#" id="linkVoltar" style="display:none;">Voltar para o login</a>
   </div>
 
-  <div class="foot">Sistema de Gestão · SGE</div>
+  <div class="foot">Sistema de Gestão · SGE v1.0</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -104,12 +124,10 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
   errorBox.classList.remove('show');
   btn.disabled = true;
-  btn.textContent = 'Entrando…';
   const email = document.getElementById('email').value.trim();
   const senha = document.getElementById('senha').value;
   const { error } = await window.sgeSupabase.auth.signInWithPassword({ email, password: senha });
   btn.disabled = false;
-  btn.textContent = 'Entrar';
   if(error){
     errorBox.textContent = error.message === 'Invalid login credentials'
       ? 'E-mail ou senha incorretos.'
@@ -147,7 +165,7 @@ linkVoltar.addEventListener('click', (e) => {
   linkEsqueci.style.display = 'inline';
   errorBox.classList.remove('show');
   successBox.classList.remove('show');
-  subText.textContent = 'Entre com seu e-mail e senha cadastrados pelo administrador.';
+  subText.textContent = 'Sistema de Gestão de Estampa';
 });
 
 const btnRecuperar = document.getElementById('btnRecuperar');
