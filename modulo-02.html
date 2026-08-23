@@ -1151,6 +1151,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
 
       dados.savedAt = pedidoRow.atualizado_em;
       pedidoState = dados;
+      sgeRegistrarAuditoria('pedidos', pedidoRow.id, existente ? 'editar' : 'criar', null, { numero: dados.pedido, referencia: dados.referencia, status: dados.status });
       showToast('Pedido ' + dados.pedido + ' salvo com sucesso');
       renderStatusBadge();
       refreshPedidosTable();
@@ -1273,6 +1274,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
         try{
           const { error } = await window.sgeSupabase.from('pedidos').delete().eq('numero', numero);
           if(error) throw error;
+          sgeRegistrarAuditoria('pedidos', numero, 'excluir', { numero: numero }, null);
           showToast('Pedido ' + numero + ' excluído');
           refreshPedidosTable();
         }catch(err){
@@ -1386,10 +1388,12 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
         try{
           const { error } = await window.sgeSupabase.from('pedidos').delete().eq('numero', p.pedido);
           if(error) throw error;
+          sgeRegistrarAuditoria('pedidos', p.pedido, 'excluir', { numero: p.pedido }, null);
+          showToast('Pedido ' + p.pedido + ' excluído');
           runSearch();
           refreshPedidosTable();
         }catch(err){
-          alert('Não foi possível excluir: ' + sgeMensagemErro(err));
+          showToast('Não foi possível excluir: ' + sgeMensagemErro(err));
         }
       });
       resultsEl.appendChild(item);

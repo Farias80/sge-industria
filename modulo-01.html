@@ -1133,8 +1133,9 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
       if(existente && !(await sgeConfirmar('Já existe uma ficha salva com a referência "' + ref + '". Deseja sobrescrever com as alterações atuais?'))){
         return;
       }
-      const { error } = await window.sgeSupabase.from('fichas').upsert({ referencia: ref, dados: state }, { onConflict: 'referencia' });
+      const { data: salvo, error } = await window.sgeSupabase.from('fichas').upsert({ referencia: ref, dados: state }, { onConflict: 'referencia' }).select().single();
       if(error) throw error;
+      sgeRegistrarAuditoria('fichas', salvo.id, existente ? 'editar' : 'criar', null, { referencia: ref });
       showToast('Ficha ' + ref + ' salva com sucesso');
       refreshRecentList();
     }catch(err){
@@ -1226,6 +1227,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
         try{
           const { error } = await window.sgeSupabase.from('fichas').delete().eq('referencia', item.ref);
           if(error) throw error;
+          sgeRegistrarAuditoria('fichas', item.ref, 'excluir', { referencia: item.ref }, null);
           showToast('Ficha ' + item.ref + ' excluída');
           refreshRecentList();
         }catch(err){
@@ -1348,10 +1350,12 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
         try{
           const { error } = await window.sgeSupabase.from('fichas').delete().eq('referencia', f.reference);
           if(error) throw error;
+          sgeRegistrarAuditoria('fichas', f.reference, 'excluir', { referencia: f.reference }, null);
+          showToast('Ficha ' + f.reference + ' excluída');
           runSearch();
           refreshRecentList();
         }catch(err){
-          alert('Não foi possível excluir: ' + sgeMensagemErro(err));
+          showToast('Não foi possível excluir: ' + sgeMensagemErro(err));
         }
       });
       resultsEl.appendChild(item);

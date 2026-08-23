@@ -1863,11 +1863,13 @@
                         if (id) {
                             // Edição
                             await updateData('fornecedores', parseInt(id), fornecedor);
-                            alert('Fornecedor atualizado com sucesso!');
+                            sgeRegistrarAuditoria('fornecedores', id, 'editar', null, fornecedor);
+                            sgeToast('Fornecedor atualizado com sucesso!');
                         } else {
                             // Novo cadastro
-                            await addData('fornecedores', fornecedor);
-                            alert('Fornecedor cadastrado com sucesso!');
+                            const novoId = await addData('fornecedores', fornecedor);
+                            sgeRegistrarAuditoria('fornecedores', novoId, 'criar', null, fornecedor);
+                            sgeToast('Fornecedor cadastrado com sucesso!');
                         }
                         
                         e.target.reset();
@@ -1875,7 +1877,7 @@
                         await carregarFornecedores();
                     } catch (error) {
                         console.error('Erro ao salvar fornecedor:', error);
-                        alert('Erro ao salvar fornecedor: ' + sgeMensagemErro(error));
+                        sgeToast('Erro ao salvar fornecedor: ' + sgeMensagemErro(error), 'erro');
                     }
                 });
                 
@@ -1908,12 +1910,14 @@
                         if (id) {
                             // Edição
                             await updateData('produtos', parseInt(id), produto);
-                            alert('Produto atualizado com sucesso!');
+                            sgeRegistrarAuditoria('produtos', id, 'editar', null, { nome: produto.nome, lote: produto.lote, quantidade: produto.quantidade });
+                            sgeToast('Produto atualizado com sucesso!');
                         } else {
                             // Novo cadastro
                             produto.dataCadastro = new Date().toISOString();
-                            await addData('produtos', produto);
-                            alert('Produto cadastrado com sucesso!');
+                            const novoId = await addData('produtos', produto);
+                            sgeRegistrarAuditoria('produtos', novoId, 'criar', null, { nome: produto.nome, lote: produto.lote, quantidade: produto.quantidade });
+                            sgeToast('Produto cadastrado com sucesso!');
                         }
                         
                         e.target.reset();
@@ -1921,7 +1925,7 @@
                         await carregarProdutos();
                     } catch (error) {
                         console.error('Erro ao salvar produto:', error);
-                        alert('Erro ao salvar produto: ' + sgeMensagemErro(error));
+                        sgeToast('Erro ao salvar produto: ' + sgeMensagemErro(error), 'erro');
                     }
                 });
                 
@@ -1939,7 +1943,7 @@
                 document.getElementById('adicionarMateria').addEventListener('click', async () => {
                     const produtoId = parseInt(document.getElementById('mpProduto').value);
                     if (!produtoId) {
-                        alert('Selecione o fornecedor e o produto para adicionar.');
+                        sgeToast('Selecione o fornecedor e o produto para adicionar.', 'erro');
                         return;
                     }
                     const quantidade = parseFloat(document.getElementById('mpQtd').value);
@@ -1952,11 +1956,11 @@
                         .reduce((s, e) => s + (parseFloat(e.quantidade) || 0), 0);
                     const disponivel = (produto.quantidade || 0) - jaUsadoNestaReceita;
                     if (disponivel <= 0) {
-                        alert('Este produto está sem estoque disponível (' + fmtEstoque(produto.quantidade) + ' kg cadastrado). Cadastre entrada de estoque antes de usar nesta receita.');
+                        sgeToast('Este produto está sem estoque disponível (' + fmtEstoque(produto.quantidade) + ' kg cadastrado). Cadastre entrada de estoque antes de usar nesta receita.', 'erro');
                         return;
                     }
                     if (quantidade && quantidade > disponivel) {
-                        alert('Estoque insuficiente: disponível ' + fmtEstoque(disponivel) + ' kg, mas foi solicitado ' + fmtEstoque(quantidade) + ' kg.');
+                        sgeToast('Estoque insuficiente: disponível ' + fmtEstoque(disponivel) + ' kg, mas foi solicitado ' + fmtEstoque(quantidade) + ' kg.', 'erro');
                         return;
                     }
 
@@ -1978,7 +1982,7 @@
                 document.getElementById('adicionarColoracao').addEventListener('click', async () => {
                     const produtoId = parseInt(document.getElementById('corProduto').value);
                     if (!produtoId) {
-                        alert('Selecione o fornecedor e o produto para adicionar.');
+                        sgeToast('Selecione o fornecedor e o produto para adicionar.', 'erro');
                         return;
                     }
                     const quantidade = parseFloat(document.getElementById('corQtd').value);
@@ -1991,11 +1995,11 @@
                         .reduce((s, e) => s + (parseFloat(e.quantidade) || 0), 0);
                     const disponivel = (produto.quantidade || 0) - jaUsadoNestaReceita;
                     if (disponivel <= 0) {
-                        alert('Este produto está sem estoque disponível (' + fmtEstoque(produto.quantidade) + ' kg cadastrado). Cadastre entrada de estoque antes de usar nesta receita.');
+                        sgeToast('Este produto está sem estoque disponível (' + fmtEstoque(produto.quantidade) + ' kg cadastrado). Cadastre entrada de estoque antes de usar nesta receita.', 'erro');
                         return;
                     }
                     if (quantidade && quantidade > disponivel) {
-                        alert('Estoque insuficiente: disponível ' + fmtEstoque(disponivel) + ' kg, mas foi solicitado ' + fmtEstoque(quantidade) + ' kg.');
+                        sgeToast('Estoque insuficiente: disponível ' + fmtEstoque(disponivel) + ' kg, mas foi solicitado ' + fmtEstoque(quantidade) + ' kg.', 'erro');
                         return;
                     }
 
@@ -2026,7 +2030,7 @@
                     // Regra: toda receita precisa estar ligada a pelo menos um produto do
                     // estoque (matéria-prima ou coloração). Sem isso, não deixa salvar.
                     if (mpEntries.length === 0 && corEntries.length === 0) {
-                        alert('Adicione pelo menos uma matéria-prima ou coloração do estoque antes de salvar a receita.');
+                        sgeToast('Adicione pelo menos uma matéria-prima ou coloração do estoque antes de salvar a receita.', 'erro');
                         return;
                     }
 
@@ -2073,7 +2077,7 @@
                             const necessario = quantidadeTotalPorProduto[produtoIdStr];
                             const disponivel = (produtoAtual ? (produtoAtual.quantidade || 0) : 0) + (reservaAtualPorProduto[pid] || 0);
                             if (!produtoAtual || disponivel < necessario) {
-                                alert('Não é possível salvar: o produto "' + (produtoAtual ? produtoAtual.nome : 'selecionado') + '" não tem estoque suficiente (disponível: ' + fmtEstoque(disponivel) + ' kg, necessário: ' + fmtEstoque(necessario) + ' kg). Ajuste a receita ou registre entrada de estoque antes de salvar.');
+                                sgeToast('Não é possível salvar: o produto "' + (produtoAtual ? produtoAtual.nome : 'selecionado') + '" não tem estoque suficiente (disponível: ' + fmtEstoque(disponivel) + ' kg, necessário: ' + fmtEstoque(necessario) + ' kg).', 'erro');
                                 return;
                             }
                         }
@@ -2098,12 +2102,12 @@
                                 await deleteData('materiasPrimas', materia.id);
                             }
                             
-                            alert('Receita atualizada com sucesso!');
+                            sgeRegistrarAuditoria('receitas', receitaId, 'editar', null, { pantone: receita.pantone, referencia: receita.referencia, pedido: receita.pedido });
                         } else {
                             // Nova receita
                             receita.dataCadastro = new Date().toISOString();
                             receitaId = await addData('receitas', receita);
-                            alert('Receita cadastrada com sucesso!');
+                            sgeRegistrarAuditoria('receitas', receitaId, 'criar', null, { pantone: receita.pantone, referencia: receita.referencia, pedido: receita.pedido });
                         }
 
                         for (const entrada of todasEntradas) {
@@ -2151,9 +2155,11 @@
                         if (pedidoVinculado) {
                             await marcarPedidoConcluido(pedidoVinculado);
                         }
+
+                        sgeToast(id ? 'Receita atualizada com sucesso!' : 'Receita cadastrada com sucesso!');
                     } catch (error) {
                         console.error('Erro ao salvar receita:', error);
-                        alert('Erro ao salvar receita: ' + sgeMensagemErro(error));
+                        sgeToast('Erro ao salvar receita: ' + sgeMensagemErro(error), 'erro');
                     }
                 });
                 
@@ -2227,12 +2233,14 @@
         const excluirFornecedor = async (id) => {
             if (await sgeConfirmar('Tem certeza que deseja excluir este fornecedor? Essa ação não pode ser desfeita.')) {
                 try {
+                    const fornecedorAntigo = await getDataById('fornecedores', parseInt(id));
                     await deleteData('fornecedores', parseInt(id));
-                    alert('Fornecedor excluído com sucesso!');
+                    sgeRegistrarAuditoria('fornecedores', id, 'excluir', fornecedorAntigo, null);
+                    sgeToast('Fornecedor excluído com sucesso!');
                     await carregarFornecedores();
                 } catch (error) {
                     console.error('Erro ao excluir fornecedor:', error);
-                    alert('Erro ao excluir fornecedor: ' + sgeMensagemErro(error));
+                    sgeToast('Erro ao excluir fornecedor: ' + sgeMensagemErro(error), 'erro');
                 }
             }
         };
@@ -2260,12 +2268,14 @@
         const excluirProduto = async (id) => {
             if (await sgeConfirmar('Tem certeza que deseja excluir este produto do estoque? Essa ação não pode ser desfeita.')) {
                 try {
+                    const produtoAntigo = await getDataById('produtos', parseInt(id));
                     await deleteData('produtos', parseInt(id));
-                    alert('Produto excluído com sucesso!');
+                    sgeRegistrarAuditoria('produtos', id, 'excluir', produtoAntigo, null);
+                    sgeToast('Produto excluído com sucesso!');
                     await carregarProdutos();
                 } catch (error) {
                     console.error('Erro ao excluir produto:', error);
-                    alert('Erro ao excluir produto: ' + sgeMensagemErro(error));
+                    sgeToast('Erro ao excluir produto: ' + sgeMensagemErro(error), 'erro');
                 }
             }
         };
@@ -2395,7 +2405,7 @@
                 }
             } catch (error) {
                 console.error('Erro ao imprimir etiqueta:', error);
-                alert('Erro ao imprimir etiqueta.');
+                sgeToast('Erro ao imprimir etiqueta.', 'erro');
             }
         };
         
@@ -2425,7 +2435,7 @@
                 linkElement.click();
             } catch (error) {
                 console.error('Erro ao exportar JSON:', error);
-                alert('Erro ao exportar dados.');
+                sgeToast('Erro ao exportar dados.', 'erro');
             }
         };
         
@@ -2456,7 +2466,7 @@
                 linkElement.click();
             } catch (error) {
                 console.error('Erro ao exportar CSV:', error);
-                alert('Erro ao exportar dados.');
+                sgeToast('Erro ao exportar dados.', 'erro');
             }
         };
         
@@ -2525,13 +2535,13 @@
                         });
                     }
 
-                    alert('Dados importados com sucesso!');
+                    sgeToast('Dados importados com sucesso!');
                     await carregarFornecedores();
                     await carregarProdutos();
                     await carregarReceitas();
                 } catch (error) {
                     console.error('Erro ao importar dados:', error);
-                    alert('Erro ao importar dados: ' + sgeMensagemErro(error));
+                    sgeToast('Erro ao importar dados: ' + sgeMensagemErro(error), 'erro');
                 }
             };
             reader.readAsText(file);
@@ -2720,7 +2730,7 @@
                 
             } catch (error) {
                 console.error('Erro ao realizar busca:', error);
-                alert('Erro ao realizar busca.');
+                sgeToast('Erro ao realizar busca.', 'erro');
             }
         };
 
@@ -2743,7 +2753,7 @@
         // que estão atualmente na lista de resultados da Busca Avançada (com matéria-prima e coloração)
         const imprimirResultadosBusca = async () => {
             if (!ultimaBuscaResultados || ultimaBuscaResultados.length === 0) {
-                alert('Nenhum resultado para imprimir. Faça uma busca primeiro.');
+                sgeToast('Nenhum resultado para imprimir. Faça uma busca primeiro.', 'erro');
                 return;
             }
             try {
@@ -2829,7 +2839,7 @@
                 printWindow.document.close();
             } catch (error) {
                 console.error('Erro ao gerar relatório de receitas:', error);
-                alert('Erro ao gerar o relatório para impressão.');
+                sgeToast('Erro ao gerar o relatório para impressão.', 'erro');
             }
         };
 
@@ -2942,24 +2952,36 @@
                 
             } catch (error) {
                 console.error('Erro ao carregar detalhes da receita:', error);
-                alert('Erro ao carregar detalhes da receita.');
+                sgeToast('Erro ao carregar detalhes da receita.', 'erro');
             }
         };
         
         const excluirReceita = async (id) => {
             if (await sgeConfirmar('Tem certeza que deseja excluir esta receita e as matérias-primas/coloração associadas? Essa ação não pode ser desfeita.')) {
                 try {
-                    // Primeiro excluir as matérias-primas associadas
+                    const receitaAntiga = await getDataById('receitas', parseInt(id));
+
+                    // Devolve ao estoque a quantidade que cada item desta receita consumia,
+                    // antes de excluir — senão o estoque fica "faltando" essa quantidade para sempre.
                     const materiasPrimas = await getDataByIndex('materiasPrimas', 'receitaId', parseInt(id));
                     for (const materia of materiasPrimas) {
+                        const produtoAntigo = await getDataById('produtos', materia.produtoId);
+                        if (produtoAntigo) {
+                            await updateData('produtos', produtoAntigo.id, {
+                                ...produtoAntigo,
+                                quantidade: (produtoAntigo.quantidade || 0) + (materia.quantidade || 0)
+                            });
+                        }
                         await deleteData('materiasPrimas', materia.id);
                     }
                     
                     // Depois excluir a receita
                     await deleteData('receitas', parseInt(id));
+                    sgeRegistrarAuditoria('receitas', id, 'excluir', receitaAntiga, null);
                     
-                    alert('Receita excluída com sucesso!');
+                    sgeToast('Receita excluída com sucesso! O estoque usado por ela foi devolvido.');
                     await carregarReceitas();
+                    await carregarProdutos();
                     
                     // Se estiver na seção de busca, atualizar a busca também
                     if (document.getElementById('busca').classList.contains('active')) {
@@ -2967,7 +2989,7 @@
                     }
                 } catch (error) {
                     console.error('Erro ao excluir receita:', error);
-                    alert('Erro ao excluir receita: ' + sgeMensagemErro(error));
+                    sgeToast('Erro ao excluir receita: ' + sgeMensagemErro(error), 'erro');
                 }
             }
         };

@@ -796,6 +796,7 @@ async function salvarRegistroNoBanco(reg){
     if(jaTemIdDoBanco){
       const { error } = await window.sgeSupabase.from('registros_qualidade').update(payload).eq('id', reg._dbId);
       if(error) throw error;
+      sgeRegistrarAuditoria('registros_qualidade', reg._dbId, 'editar', null, { referencia: reg.referencia, pedido: reg.pedido, status: reg.status });
     } else {
       const { data: row, error } = await window.sgeSupabase.from('registros_qualidade').insert(payload).select().single();
       if(error) throw error;
@@ -803,6 +804,7 @@ async function salvarRegistroNoBanco(reg){
       reg.id = row.id;
       idEmEdicao = row.id;
       regSeq = Math.max(regSeq, row.id) + 1;
+      sgeRegistrarAuditoria('registros_qualidade', row.id, 'criar', null, { referencia: reg.referencia, pedido: reg.pedido, status: reg.status });
     }
     marcarSalvando('Salvo no Supabase · ' + new Date().toLocaleTimeString('pt-BR'));
 
@@ -1411,6 +1413,7 @@ async function excluirRegistro(id){
   if(!(await sgeConfirmar('Excluir o cadastro da referência ' + (reg.referencia||'—') + ' (Pedido ' + (reg.pedido||'—') + ')? Esta ação não pode ser desfeita.'))) return;
   try{
     await window.sgeSupabase.from('registros_qualidade').delete().eq('id', id);
+    sgeRegistrarAuditoria('registros_qualidade', id, 'excluir', { referencia: reg.referencia, pedido: reg.pedido }, null);
   }catch(e){ console.error('Falha ao excluir cadastro', e); }
   registros = registros.filter(x=>x.id!==id);
   if(idEmEdicao===id) idEmEdicao = null;

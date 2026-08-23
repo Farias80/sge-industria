@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGE · Redefinir senha</title>
+<link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+:root{
+  --navy-900:#0E1638;--navy-800:#141F4D;--indigo-600:#5B4FE8;--indigo-500:#6E63EE;
+  --bg:#EEF1F8;--card:#FFFFFF;--border:#E1E4F0;--text:#161A3B;--text-muted:#6A6F94;
+  --danger:#DC3630;--danger-50:#FCEAE9;--ok:#1C9A6C;--ok-50:#E7F7F1;--radius:14px;
+  --shadow:0 1px 2px rgba(20,25,70,.04), 0 8px 24px -12px rgba(20,25,70,.12);
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;min-height:100vh;background:linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-image:radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 1.5px), linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  background-size:14px 14px, auto;
+  font-family:'Inter',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.box{
+  background:var(--card);border-radius:var(--radius);box-shadow:0 30px 80px -30px rgba(0,0,0,.5);
+  padding:36px 32px;max-width:380px;width:100%;
+}
+h1{font-family:'Sora',sans-serif;font-weight:800;font-size:22px;color:var(--navy-900);margin:0 0 4px;}
+.sub{font-size:13px;color:var(--text-muted);margin-bottom:26px;line-height:1.5;}
+label{font-family:'Sora',sans-serif;font-weight:700;font-size:12.5px;color:var(--navy-900);display:block;margin-bottom:6px;}
+input{
+  width:100%;padding:11px 13px;border-radius:9px;border:1px solid var(--border);font-size:14px;
+  color:var(--text);margin-bottom:16px;font-family:'Inter',sans-serif;
+}
+input:focus{outline:2px solid var(--indigo-500);outline-offset:1px;border-color:transparent;}
+button{
+  width:100%;background:var(--indigo-600);color:#fff;border:none;padding:12px;border-radius:10px;
+  font-family:'Sora',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:background .15s ease;
+}
+button:hover{background:var(--indigo-500);}
+button:disabled{opacity:.6;cursor:not-allowed;}
+.error{
+  background:var(--danger-50);color:var(--danger);border:1px solid #F6D3D1;border-radius:9px;
+  padding:10px 12px;font-size:12.5px;margin-bottom:16px;display:none;
+}
+.error.show{display:block;}
+.success{
+  background:var(--ok-50);color:var(--ok);border:1px solid #CDEEE0;border-radius:9px;
+  padding:10px 12px;font-size:12.5px;margin-bottom:16px;display:none;
+}
+.success.show{display:block;}
+.foot{text-align:center;margin-top:18px;font-size:11.5px;color:var(--text-muted);}
+.foot a{color:var(--indigo-600);text-decoration:none;font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h1>SGE</h1>
+  <div class="sub" id="subText">Crie uma nova senha para acessar o sistema.</div>
+  <div class="error" id="errorBox"></div>
+  <div class="success" id="successBox"></div>
+
+  <form id="formRedefinir">
+    <label for="novaSenha">Nova senha</label>
+    <input type="password" id="novaSenha" required minlength="6" autocomplete="new-password">
+    <label for="confirmarSenha">Confirmar nova senha</label>
+    <input type="password" id="confirmarSenha" required minlength="6" autocomplete="new-password">
+    <button type="submit" id="btnRedefinir">Salvar nova senha</button>
+  </form>
+
+  <div class="foot"><a href="login.html">Voltar para o login</a></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/supabase-client.js"></script>
+<script>
+const errorBox = document.getElementById('errorBox');
+const successBox = document.getElementById('successBox');
+const form = document.getElementById('formRedefinir');
+const btn = document.getElementById('btnRedefinir');
+const subText = document.getElementById('subText');
+
+(async function(){
+  // O link do e-mail cria uma sessão temporária de recuperação automaticamente.
+  // Se não houver sessão nenhuma, o link é inválido ou expirou.
+  const { data } = await window.sgeSupabase.auth.getSession();
+  if(!data || !data.session){
+    subText.textContent = 'Este link de redefinição é inválido ou já expirou.';
+    form.style.display = 'none';
+    errorBox.textContent = 'Peça um novo link na tela de login, em "Esqueci minha senha".';
+    errorBox.classList.add('show');
+  }
+})();
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorBox.classList.remove('show');
+  successBox.classList.remove('show');
+
+  const novaSenha = document.getElementById('novaSenha').value;
+  const confirmarSenha = document.getElementById('confirmarSenha').value;
+
+  if(novaSenha !== confirmarSenha){
+    errorBox.textContent = 'As senhas não coincidem.';
+    errorBox.classList.add('show');
+    return;
+  }
+  if(novaSenha.length < 6){
+    errorBox.textContent = 'A senha precisa ter pelo menos 6 caracteres.';
+    errorBox.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Salvando…';
+  const { error } = await window.sgeSupabase.auth.updateUser({ password: novaSenha });
+  btn.disabled = false;
+  btn.textContent = 'Salvar nova senha';
+
+  if(error){
+    errorBox.textContent = sgeMensagemErro(error);
+    errorBox.classList.add('show');
+    return;
+  }
+
+  form.style.display = 'none';
+  successBox.textContent = 'Senha atualizada com sucesso! Redirecionando para o login...';
+  successBox.classList.add('show');
+  await window.sgeSupabase.auth.signOut();
+  setTimeout(() => { window.location.href = 'login.html'; }, 2200);
+});
+</script>
+
+</body>
+</html>
