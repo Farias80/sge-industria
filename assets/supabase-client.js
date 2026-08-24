@@ -203,3 +203,55 @@ async function sgeRestaurar(tabela, id){
     deletado_por: null
   }).eq('id', id);
 }
+
+/* ---------------- Progresso de pantones (Ficha × Receitas de um pedido) ----------------
+   Compara os pantones cadastrados na ficha do Módulo 01 (por estampa + tagless) com as
+   receitas do Módulo 03 já vinculadas a um pedido específico. Um pedido só fica
+   "concluído" quando TODOS os pantones da ficha tiverem receita cadastrada E vinculada
+   a ele — não basta existir uma receita qualquer com aquele pantone em outro pedido.
+
+   Função pura (sem chamadas de rede) — útil para calcular em lote (ex: tabela inteira
+   de pedidos) sem fazer uma consulta por linha. */
+function sgeProgressoPantones(fichaDados, pantonesDaReceitaDoPedido){
+  const grupos = [];
+  ((fichaDados && fichaDados.estampas) || []).forEach((estampa, idx) => {
+    const nome = estampa.name || ('Estampa ' + (idx + 1));
+    const pantones = (estampa.pantones || []).filter(p => p.code);
+    if (pantones.length) grupos.push({ nome, codigos: pantones.map(p => p.code) });
+  });
+  if (fichaDados && fichaDados.tagless) {
+    const pantonesTagless = (fichaDados.tagless.pantones || []).filter(p => p.code);
+    if (pantonesTagless.length) grupos.push({ nome: 'Tagless', codigos: pantonesTagless.map(p => p.code) });
+  }
+
+  const registradosSet = new Set((pantonesDaReceitaDoPedido || []).map(p => (p || '').trim().toLowerCase()));
+  let total = 0, registrados = 0;
+  const detalhes = grupos.map(g => {
+    const itens = g.codigos.map(code => {
+      total++;
+      const ok = registradosSet.has((code || '').trim().toLowerCase());
+      if (ok) registrados++;
+      return { code, registrado: ok };
+    });
+    return { nome: g.nome, itens };
+  });
+  return { total, registrados, concluido: total > 0 && registrados === total, detalhes };
+}
+
+// Versão pronta para uso pontual (ex: dentro do Módulo 03, para 1 pedido só).
+// Para telas com uma lista inteira de pedidos (Módulo 02, Dashboard), busque as
+// fichas e receitas em lote e use sgeProgressoPantones(...) diretamente por linha,
+// para não disparar uma consulta por pedido.
+async function sgeBuscarProgressoPantonesPedido(referencia, pedidoNumero){
+  if (!referencia || !pedidoNumero) return { total: 0, registrados: 0, concluido: false, detalhes: [] };
+  try{
+    const [{ data: fichaRow }, { data: receitasRows }] = await Promise.all([
+      window.sgeSupabase.from('fichas').select('dados').eq('referencia', referencia).is('deletado_em', null).maybeSingle(),
+      window.sgeSupabase.from('receitas').select('pantone').eq('pedido_numero', pedidoNumero).is('deletado_em', null)
+    ]);
+    return sgeProgressoPantones(fichaRow ? fichaRow.dados : null, (receitasRows || []).map(r => r.pantone));
+  }catch(e){
+    console.error('[SGE] Falha ao calcular progresso de pantones', e);
+    return { total: 0, registrados: 0, concluido: false, detalhes: [] };
+  }
+}
