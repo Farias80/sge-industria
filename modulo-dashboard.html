@@ -268,6 +268,22 @@ footer a{color:var(--text-muted);}
         </div>
       </div>
 
+      <!-- 7. Progresso de pantones por pedido -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Progresso de Pantones</div>
+            <div class="card-sub">Ficha (Mód. 01) × Receitas vinculadas ao pedido (Mód. 03)</div>
+          </div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+          </div>
+        </div>
+        <div class="card-big" id="pantoneTotal">—<span class="unit">pedidos completos</span></div>
+        <div class="card-foot" id="pantoneFoot">carregando…</div>
+        <div class="mini-list" id="pantoneList"></div>
+      </div>
+
     </div>
   </div>
 </main>
@@ -301,22 +317,25 @@ async function carregarDashboard(){
       { data: receitaItens, error: e4 },
       { data: pedidos, error: e5 },
       { data: ordens, error: e6 },
-      { data: registros, error: e7 }
+      { data: registros, error: e7 },
+      { data: fichas, error: e8 }
     ] = await Promise.all([
-      sb.from('produtos').select('*'),
-      sb.from('fornecedores').select('*'),
-      sb.from('receitas').select('*'),
+      sb.from('produtos').select('*').is('deletado_em', null),
+      sb.from('fornecedores').select('*').is('deletado_em', null),
+      sb.from('receitas').select('*').is('deletado_em', null),
       sb.from('receita_itens').select('*'),
-      sb.from('pedidos').select('*'),
+      sb.from('pedidos').select('*').is('deletado_em', null),
       sb.from('ordens_producao').select('*'),
-      sb.from('registros_qualidade').select('*')
+      sb.from('registros_qualidade').select('*').is('deletado_em', null),
+      sb.from('fichas').select('referencia, dados').is('deletado_em', null)
     ]);
 
-    const erro = e1 || e2 || e3 || e4 || e5 || e6 || e7;
+    const erro = e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8;
     if(erro) throw erro;
 
     const produtosL = produtos || [], fornecedoresL = fornecedores || [], receitasL = receitas || [];
     const receitaItensL = receitaItens || [], pedidosL = pedidos || [], ordensL = ordens || [], registrosL = registros || [];
+    const fichasL = fichas || [];
 
     const fornecedorNome = id => {
       const f = fornecedoresL.find(x => String(x.id) === String(id));
@@ -416,6 +435,32 @@ async function carregarDashboard(){
       <div class="bar-seg reprovado" style="width:${(reprov/total6)*100}%"></div>
       <div class="bar-seg pendente" style="width:${(pend/total6)*100}%"></div>
     ` : '';
+
+    /* 7. Progresso de pantones por pedido */
+    const fichaPorReferencia = {};
+    fichasL.forEach(f => { fichaPorReferencia[f.referencia] = f.dados; });
+    const pantonesPorPedido = {};
+    receitasL.forEach(r => {
+      if (!r.pedido_numero) return;
+      (pantonesPorPedido[r.pedido_numero] = pantonesPorPedido[r.pedido_numero] || []).push(r.pantone);
+    });
+    const progressos = pedidosL.map(p => ({
+      pedido: p.numero,
+      referencia: p.referencia,
+      progresso: sgeProgressoPantones(fichaPorReferencia[p.referencia], pantonesPorPedido[p.numero])
+    })).filter(x => x.progresso.total > 0);
+
+    const completos = progressos.filter(x => x.progresso.concluido).length;
+    document.getElementById('pantoneTotal').innerHTML = completos + '<span class="unit">de ' + progressos.length + ' pedidos completos</span>';
+    document.getElementById('pantoneFoot').textContent = progressos.length
+      ? (progressos.length - completos) + ' pedido(s) ainda com pantone pendente'
+      : 'Nenhum pedido com ficha vinculada ainda';
+    const pantonesPendentes = progressos.filter(x => !x.progresso.concluido)
+      .sort((a, b) => (a.progresso.registrados / a.progresso.total) - (b.progresso.registrados / b.progresso.total))
+      .slice(0, 6);
+    document.getElementById('pantoneList').innerHTML = pantonesPendentes.length ? pantonesPendentes.map(x => `
+      <div class="mini-row low"><span class="name">${escapeHtml(x.pedido)} · ${escapeHtml(x.referencia||'—')}</span><span class="val">${x.progresso.registrados}/${x.progresso.total}</span></div>
+    `).join('') : '<div class="empty-mini">Todos os pedidos com ficha vinculada estão completos 🎉</div>';
 
     document.getElementById('statusDot').className = 'status-dot';
     document.getElementById('statusText').textContent = 'Dados atualizados em ' + new Date().toLocaleString('pt-BR');

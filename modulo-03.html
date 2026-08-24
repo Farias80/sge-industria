@@ -551,6 +551,8 @@
     .pantone-linha.used{background:var(--ok-50);}
     .pantone-linha.used .cod, .pantone-linha.used .tipo{color:var(--ok);}
     .pantone-linha.used::after{content:none;}
+    .pantone-linha.registrado-pedido{border-left:3px solid var(--ok);padding-left:7px;}
+    .pantone-linha.registrado-pedido .cod::after{content:"✓ registrado";font-size:9.5px;font-weight:800;color:var(--ok);margin-left:6px;letter-spacing:.02em;}
     .pantone-grupo-vazio{padding:12px;font-size:11.5px;color:var(--text-muted);font-style:italic;text-align:center;}
     .pantones-ficha-empty{font-size:12px;color:var(--text-muted);font-style:italic;}
 
@@ -741,6 +743,7 @@
                     <div id="receitaPedidoInfo" style="font-size:11.5px;color:var(--text-muted);margin-top:6px;"></div>
                     <div class="pantones-ficha-box" id="pantonesFichaBox" style="display:none;">
                         <div class="pantones-ficha-title">Pantones da ficha (Módulo 01) — clique para preencher a receita</div>
+                        <div id="progressoPantonesPedido" style="display:none;"></div>
                         <div class="pantone-grupos-grid" id="pantonesFichaList"></div>
                     </div>
                 </div>
@@ -1738,6 +1741,43 @@
             });
 
             atualizarPantoneChipsUsados();
+            atualizarProgressoPantonesPedido();
+        };
+
+        // Compara os pantones da ficha com as receitas já cadastradas E vinculadas ao
+        // pedido selecionado — só marca como "concluído" quando todos baterem.
+        const atualizarProgressoPantonesPedido = async () => {
+            const caixa = document.getElementById('progressoPantonesPedido');
+            const numeroPedido = document.getElementById('receitaPedido').value;
+            const referencia = document.getElementById('receitaReferencia').value;
+
+            if (!numeroPedido || !fichaVinculadaReceita) {
+                caixa.style.display = 'none';
+                return;
+            }
+
+            const progresso = await sgeBuscarProgressoPantonesPedido(referencia, numeroPedido);
+            if (progresso.total === 0) { caixa.style.display = 'none'; return; }
+
+            caixa.style.display = 'block';
+            const cor = progresso.concluido ? '#1C9A6C' : '#B4780B';
+            const fundo = progresso.concluido ? '#E7F7F1' : '#FBF1E1';
+            caixa.innerHTML = `
+                <div style="display:flex;align-items:center;gap:8px;background:${fundo};color:${cor};border-radius:9px;padding:8px 12px;font-size:12px;font-weight:700;margin:8px 0 12px;">
+                    ${progresso.concluido
+                        ? '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg> CONCLUÍDO — todos os ' + progresso.total + ' pantones deste pedido têm receita cadastrada'
+                        : '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg> ' + progresso.registrados + ' de ' + progresso.total + ' pantones registrados neste pedido'}
+                </div>
+            `;
+
+            // Marca com ✓ cada pantone da lista abaixo que já tem receita para este pedido
+            const registradosCodes = new Set(
+                progresso.detalhes.flatMap(g => g.itens.filter(i => i.registrado).map(i => i.code.trim().toLowerCase()))
+            );
+            document.querySelectorAll('#pantonesFichaList .pantone-linha').forEach(linha => {
+                const code = (linha.getAttribute('data-code') || '').trim().toLowerCase();
+                linha.classList.toggle('registrado-pedido', registradosCodes.has(code));
+            });
         };
 
         const atualizarPantoneChipsUsados = () => {
@@ -2262,6 +2302,7 @@
                         atualizarPantoneChipsUsados();
                         await carregarProdutos();
                         await carregarReceitas();
+                        await atualizarProgressoPantonesPedido();
 
                         // Regra: ao salvar uma receita vinculada a um pedido do Módulo 02,
                         // esse pedido passa a ficar sinalizado como "Concluída" por lá.

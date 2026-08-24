@@ -596,10 +596,10 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     <div class="pedidos-table-wrap">
       <table class="pedidos-table">
         <thead>
-          <tr><th>Pedido</th><th>Referência</th><th>Ordens de Produção</th><th>Qtd. Total</th><th>Status</th><th>Qualidade</th><th>Salvo em</th><th></th></tr>
+          <tr><th>Pedido</th><th>Referência</th><th>Ordens de Produção</th><th>Qtd. Total</th><th>Status</th><th>Pantones</th><th>Qualidade</th><th>Salvo em</th><th></th></tr>
         </thead>
         <tbody id="pedidosTableBody">
-          <tr class="pedidos-empty-row"><td colspan="8">Nenhum pedido salvo ainda.</td></tr>
+          <tr class="pedidos-empty-row"><td colspan="9">Nenhum pedido salvo ainda.</td></tr>
         </tbody>
       </table>
     </div>
@@ -911,6 +911,11 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     const label = s === 'aprovado' ? 'Aprovado' : (s === 'reprovado' ? 'Reprovado' : 'Pendente');
     return `<span class="qual-badge ${s}">${label}</span>`;
   }
+  function pantoneProgressoBadgeHtml(progresso){
+    if(!progresso || progresso.total === 0) return '<span style="font-size:11px;color:var(--text-muted);">—</span>';
+    if(progresso.concluido) return '<span class="qual-badge aprovado">✓ Completo (' + progresso.total + ')</span>';
+    return '<span class="qual-badge pendente">' + progresso.registrados + '/' + progresso.total + '</span>';
+  }
   function renderStatusBadge(){
     const status = pedidoState.status === 'concluida' ? 'concluida' : 'pendente';
     const icon = status === 'concluida'
@@ -1209,13 +1214,28 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     try{
       const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('*, ordens_producao(numero, quantidade, ordem)').is('deletado_em', null).order('numero', { ascending: false });
       if(error) throw error;
+
+      // Busca em lote (1 consulta só) as fichas e receitas necessárias para calcular
+      // o progresso de pantones de cada pedido, em vez de 1 consulta por linha.
+      const [{ data: fichasRows }, { data: receitasRows }] = await Promise.all([
+        window.sgeSupabase.from('fichas').select('referencia, dados').is('deletado_em', null),
+        window.sgeSupabase.from('receitas').select('pedido_numero, pantone').is('deletado_em', null).not('pedido_numero', 'is', null)
+      ]);
+      const fichaPorReferencia = {};
+      (fichasRows || []).forEach(f => { fichaPorReferencia[f.referencia] = f.dados; });
+      const pantonesPorPedido = {};
+      (receitasRows || []).forEach(r => {
+        (pantonesPorPedido[r.pedido_numero] = pantonesPorPedido[r.pedido_numero] || []).push(r.pantone);
+      });
+
       pedidosCache = (rows || []).map(p => ({
         pedido: p.numero,
         referencia: p.referencia,
         status: p.status,
         statusQualidade: p.status_qualidade || 'pendente',
         savedAt: p.atualizado_em,
-        ordens: (p.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0))
+        ordens: (p.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0)),
+        pantoneProgresso: sgeProgressoPantones(fichaPorReferencia[p.referencia], pantonesPorPedido[p.numero])
       }));
     }catch(err){
       pedidosCache = [];
@@ -1240,8 +1260,8 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
 
     if(items.length === 0){
       pedidosTableBody.innerHTML = pedidosCache.length === 0
-        ? '<tr class="pedidos-empty-row"><td colspan="8">Nenhum pedido salvo ainda. <a href="#" onclick="document.getElementById(\'pedidoInput\').focus();return false;" style="color:var(--indigo-600);font-weight:600;text-decoration:none;">Criar o primeiro →</a></td></tr>'
-        : '<tr class="pedidos-empty-row"><td colspan="8">Nenhum pedido "' + (filtroAtual === 'concluida' ? 'concluído' : 'pendente') + '" no momento.</td></tr>';
+        ? '<tr class="pedidos-empty-row"><td colspan="9">Nenhum pedido salvo ainda. <a href="#" onclick="document.getElementById(\'pedidoInput\').focus();return false;" style="color:var(--indigo-600);font-weight:600;text-decoration:none;">Criar o primeiro →</a></td></tr>'
+        : '<tr class="pedidos-empty-row"><td colspan="9">Nenhum pedido "' + (filtroAtual === 'concluida' ? 'concluído' : 'pendente') + '" no momento.</td></tr>';
       return;
     }
     pedidosTableBody.innerHTML = items.map(p => {
@@ -1257,6 +1277,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
           <td class="ops-cell">${escapeHtml(opsTxt)}</td>
           <td>${qtdTotal || '—'}</td>
           <td><span class="status-badge ${status}">${statusLabel(status)}</span></td>
+          <td>${pantoneProgressoBadgeHtml(p.pantoneProgresso)}</td>
           <td>${qualBadgeHtml(p.statusQualidade)}</td>
           <td class="ops-cell">${savedAtCell}</td>
           <td>
@@ -1349,10 +1370,23 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
     try{
       const { data: rows, error } = await window.sgeSupabase.from('pedidos').select('*, ordens_producao(numero, quantidade, ordem)').is('deletado_em', null);
       if(error) throw error;
+
+      const [{ data: fichasRows }, { data: receitasRows }] = await Promise.all([
+        window.sgeSupabase.from('fichas').select('referencia, dados').is('deletado_em', null),
+        window.sgeSupabase.from('receitas').select('pedido_numero, pantone').is('deletado_em', null).not('pedido_numero', 'is', null)
+      ]);
+      const fichaPorReferencia = {};
+      (fichasRows || []).forEach(f => { fichaPorReferencia[f.referencia] = f.dados; });
+      const pantonesPorPedido = {};
+      (receitasRows || []).forEach(r => {
+        (pantonesPorPedido[r.pedido_numero] = pantonesPorPedido[r.pedido_numero] || []).push(r.pantone);
+      });
+
       const items = (rows || []).map(p => ({
         pedido: p.numero, referencia: p.referencia, status: p.status,
         statusQualidade: p.status_qualidade || 'pendente',
-        ordens: (p.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0))
+        ordens: (p.ordens_producao || []).slice().sort((a,b) => (a.ordem||0) - (b.ordem||0)),
+        pantoneProgresso: sgeProgressoPantones(fichaPorReferencia[p.referencia], pantonesPorPedido[p.numero])
       }));
       const matches = items.filter(p => pedidoMatches(p, filters));
       renderSearchResults(matches);
@@ -1374,7 +1408,7 @@ h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
       item.className = 'search-result-item';
       item.innerHTML = `
         <div class="search-result-main">
-          <div class="search-result-ref">${escapeHtml(p.pedido || '—')} ${qualBadgeHtml(p.statusQualidade)}</div>
+          <div class="search-result-ref">${escapeHtml(p.pedido || '—')} ${qualBadgeHtml(p.statusQualidade)} ${pantoneProgressoBadgeHtml(p.pantoneProgresso)}</div>
           <div class="search-result-meta">Ref. ${escapeHtml(p.referencia || '—')}</div>
           <div class="search-result-tags">${ops.map(o => `<span class="tag-chip">${escapeHtml(o)}</span>`).join('')}</div>
         </div>
