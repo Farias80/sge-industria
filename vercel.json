@@ -11,6 +11,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/", "destination": "/modulo-00.html" }
+    { "source": "/", "destination": "/modulo-00.html" },
+    { "source": "/supa/:path*", "destination": "https://uqxyogatphxpwszyryac.supabase.co/:path*" }
   ]
 }
